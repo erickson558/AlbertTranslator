@@ -1,0 +1,6 @@
+1) Renombra ".env.example" a ".env"
+2) Ejecuta AlbertTranslator.exe
+3) Haz clic en "Guardar config" y luego en "Iniciar servidor"
+4) Si el navegador no abre solo, haz clic en "Abrir web"
+5) Permite microfono para la captura de audio en tiempo real
+6) Si falla algo, revisa "alberttranslator.log" junto al exe

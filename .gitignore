@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local settings/secrets
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+build/
+dist/
+
+# Runtime logs/temp
+*.log
+_tmp_cli_stdout.log
+_tmp_cli_stderr.log
+
+# Local models and cache
+models/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

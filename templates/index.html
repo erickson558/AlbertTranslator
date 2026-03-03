@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traductor de Voz en Vivo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260216-3') }}">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <h1>Traductor de Voz en Vivo</h1>
+      <p>Transcripcion por voz del navegador y traduccion automatica con idioma origen y destino.</p>
+    </header>
+
+    <section class="language-bar">
+      <div class="lang-field">
+        <label for="source-language">Idioma origen</label>
+        <select id="source-language"></select>
+      </div>
+
+      <button id="swap-languages" type="button" class="swap-btn" title="Intercambiar idiomas">Intercambiar</button>
+
+      <div class="lang-field">
+        <label for="target-language">Idioma destino</label>
+        <select id="target-language"></select>
+      </div>
+    </section>
+
+    <section class="backend-bar">
+      <div class="backend-field">
+        <label for="transcription-backend">Backend de transcripcion</label>
+        <select id="transcription-backend">
+          <option value="google">google (nube)</option>
+          <option value="faster_whisper">faster_whisper (local)</option>
+        </select>
+      </div>
+      <p id="backend-note" class="backend-note">
+        Puedes cambiar el backend sin reiniciar. Google es el motor predeterminado.
+      </p>
+    </section>
+
+    <section class="controls">
+      <button id="start-listening" type="button" class="primary">Iniciar escucha</button>
+      <button id="stop-listening" type="button" disabled>Detener</button>
+      <button id="clear-output" type="button">Limpiar</button>
+      <span id="status" class="status idle">Inactivo</span>
+    </section>
+
+    <section class="panes">
+      <article class="pane">
+        <div class="pane-head">
+          <h2>Transcripcion</h2>
+          <button id="copy-transcript" type="button" class="copy-btn">Copiar</button>
+        </div>
+        <textarea id="transcript-output" readonly placeholder="La transcripcion aparecera aqui..."></textarea>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <h2>Traduccion</h2>
+          <button id="copy-translation" type="button" class="copy-btn">Copiar</button>
+        </div>
+        <textarea id="translation-output" readonly placeholder="La traduccion aparecera aqui..."></textarea>
+      </article>
+    </section>
+
+    <p id="error-box" class="error-box" hidden></p>
+
+    <footer class="app-footer">
+      <small>Permite el microfono para capturar audio y enviarlo al servidor local para transcripcion.</small>
+    </footer>
+  </main>
+
+  <script>
+    window.APP_CONFIG = {
+      audioChunkMs: {{ audio_chunk_ms | tojson }},
+      apiBaseUrl: {{ request.host_url.rstrip('/') | tojson }},
+      fallbackHost: {{ app_host | tojson }},
+      fallbackPort: {{ app_port | tojson }},
+      transcriptionBackend: {{ transcription_backend | tojson }}
+    };
+  </script>
+  <script src="{{ url_for('static', filename='app.js', v='20260216-3') }}"></script>
+</body>
+</html>
