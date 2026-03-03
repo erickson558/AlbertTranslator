@@ -1,0 +1,38 @@
+name: Feature request
+description: Propone una mejora funcional
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o necesidad
+      description: Que limitacion actual quieres resolver.
+      placeholder: Actualmente no puedo...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Describe la funcionalidad deseada.
+      placeholder: Agregar soporte para...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Otras opciones evaluadas.
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto esperado
+      description: Valor para usuario y posibles riesgos.
+    validations:
+      required: false

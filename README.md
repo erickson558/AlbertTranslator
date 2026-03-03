@@ -1,143 +1,151 @@
 ﻿# AlbertTranslator
 
-Aplicacion local con separacion front-end/back-end para capturar audio del microfono, transcribir y traducir en tiempo real.
+[![Release](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml)
+[![CI](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-## Stack actual
+Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
 
-- Captura de audio: navegador (microfono + chunks WAV)
-- Transcripcion: backend configurable (`SpeechRecognition`/Google por defecto o `faster-whisper` local opcional)
-- Traduccion: backend configurable (`google` via `deep-translator` o `libretranslate` open source)
-- UI web local: Flask + navegador
-- Lanzador de escritorio: Tkinter
+## Que hace el programa
+
+- Captura audio por bloques desde la web local (`/`).
+- Transcribe usando backend configurable:
+  - `google` (SpeechRecognition + servicio de Google)
+  - `faster_whisper` (modelo local)
+- Traduce usando backend configurable:
+  - `google` (`deep-translator`)
+  - `libretranslate` (self-hosted o remoto)
+- Ofrece modo escritorio (GUI Tkinter) y modo servidor CLI.
+
+## Caracteristicas principales
+
+- Arquitectura separada `frontend` + `backend`.
+- Configuracion persistente con `.env`.
+- Validaciones de entrada y limites de tamano de audio (25 MB).
+- Logs para diagnostico (`alberttranslator.log` y `alberttranslator_fatal.log`).
+- Release automatica con tags semanticos (`vX.Y.Z`) en cada push a `main`.
 
 ## Arquitectura
 
-- Front-end: `templates/index.html`, `static/app.js`, `static/style.css`
-- Back-end: paquete `alberttranslator/`
-
-Modulos principales:
-
-- `alberttranslator/api.py`: rutas Flask y contrato HTTP
-- `alberttranslator/speech_service.py`: logica de traduccion/deteccion de idioma
-- `alberttranslator/settings.py`: configuracion y validacion
-- `alberttranslator/server.py`: arranque servidor GUI/CLI
-- `alberttranslator/gui.py`: panel desktop para iniciar/detener servidor
-- `alberttranslator/logging_setup.py`: logging y errores fatales
+- Frontend:
+  - `templates/index.html`
+  - `static/app.js`
+  - `static/style.css`
+- Backend:
+  - `alberttranslator/api.py`: API Flask y rutas
+  - `alberttranslator/speech_service.py`: transcripcion/traduccion
+  - `alberttranslator/settings.py`: carga y validacion de configuracion
+  - `alberttranslator/server.py`: arranque servidor
+  - `alberttranslator/gui.py`: interfaz de escritorio
+  - `alberttranslator/logging_setup.py`: logging y manejo de errores
 
 ## Requisitos
 
-- Python 3.10+
-- Chrome o Edge con permiso de microfono
-- Para flujo 100% local: modelo Whisper disponible en `models/whisper`
-- Internet solo si eliges `TRANSCRIPTION_BACKEND=google` o `TRANSLATION_BACKEND=google`
-- Traduccion:
-  - `google`: requiere internet
-  - `libretranslate`: puede ser local (self-hosted) o remoto
+- Python 3.10 o superior
+- Windows (modo GUI) o cualquier SO compatible con Flask (modo CLI)
+- Chrome/Edge con permiso de microfono
+- Para uso 100% local de STT: modelo Whisper en `models/whisper`
+- Internet si usas `TRANSCRIPTION_BACKEND=google` o `TRANSLATION_BACKEND=google`
 
-## Backend de transcripcion
-
-Variables en `.env`:
-
-```env
-TRANSCRIPTION_BACKEND=google
-WHISPER_MODEL=base
-WHISPER_DEVICE=cpu
-WHISPER_COMPUTE_TYPE=int8
-WHISPER_LOCAL_FILES_ONLY=1
-```
-
-Valores recomendados:
-
-- `TRANSCRIPTION_BACKEND=google` para menor latencia inicial y mejor agilidad.
-- `WHISPER_LOCAL_FILES_ONLY=1` para forzar uso de modelo local.
-- `TRANSCRIPTION_BACKEND=faster_whisper` para operar totalmente sin internet.
-- Puedes cambiar `TRANSCRIPTION_BACKEND` desde la GUI de escritorio y desde el selector web.
-
-## Backend de traduccion
-
-Variables nuevas en `.env`:
-
-```env
-TRANSLATION_BACKEND=google
-LIBRETRANSLATE_URL=http://127.0.0.1:5000
-LIBRETRANSLATE_API_KEY=
-LIBRETRANSLATE_TIMEOUT_SEC=15
-```
-
-Valores recomendados:
-
-- `TRANSLATION_BACKEND=google` para comparar calidad tipo Google Translate.
-- `TRANSLATION_BACKEND=libretranslate` para usar una opcion open source (Argos/LibreTranslate).
-
-### Levantar LibreTranslate local (open source)
-
-Opcion Python:
-
-```bash
-pip install libretranslate
-libretranslate
-```
-
-Luego configura:
-
-```env
-TRANSLATION_BACKEND=libretranslate
-LIBRETRANSLATE_URL=http://127.0.0.1:5000
-```
-
-Para Docker, revisa la guia oficial de instalacion de LibreTranslate.
-
-## Ejecutar en desarrollo
+## Instalacion (desarrollo)
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 copy .env.example .env
 python app.py
 ```
 
-## Modo CLI
+## Uso
+
+### Modo escritorio (default)
+
+```bash
+python app.py
+```
+
+### Modo CLI
 
 ```bash
 python app.py --cli --host 127.0.0.1 --port 8765 --no-browser
 ```
 
-## Generar .exe portable (Windows)
+### Build portable (.exe)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_exe.ps1
 ```
 
-Salida en `dist\portable\`:
+## Variables de entorno (`.env`)
 
-- `AlbertTranslator.exe` (o `AlbertTranslator_YYYYMMDD_HHMMSS.exe` si el nombre base esta bloqueado)
-- `.env.example`
-- `LEEME_PORTABLE.txt`
+| Variable | Default | Descripcion |
+|---|---|---|
+| `APP_HOST` | `127.0.0.1` | Host del servidor local |
+| `APP_PORT` | `8765` | Puerto del servidor |
+| `APP_OPEN_BROWSER` | `1` | Abre navegador al iniciar |
+| `AUDIO_CHUNK_MS` | `2200` | Duracion del bloque de audio (500-30000) |
+| `TRANSCRIPTION_BACKEND` | `google` | `google` o `faster_whisper` |
+| `WHISPER_MODEL` | `base` | Modelo Whisper (`tiny`, `base`, `small`, `medium`, `large-v3`) |
+| `WHISPER_DEVICE` | `cpu` | Dispositivo Whisper (`cpu`, `cuda`) |
+| `WHISPER_COMPUTE_TYPE` | `int8` | Precision de inferencia |
+| `WHISPER_LOCAL_FILES_ONLY` | `1` | Fuerza uso de modelo local |
+| `TRANSLATION_BACKEND` | `google` | `google` o `libretranslate` |
+| `LIBRETRANSLATE_URL` | `http://127.0.0.1:5000` | Endpoint base de LibreTranslate |
+| `LIBRETRANSLATE_API_KEY` | vacio | API key opcional de LibreTranslate |
+| `LIBRETRANSLATE_TIMEOUT_SEC` | `15` | Timeout de peticiones a LibreTranslate |
+| `AUTO_INSTALL_TRANSLATION_PACKAGES` | `1` | Flag heredado para compatibilidad |
 
-## Uso rapido del .exe
+## API HTTP
 
-1. Renombra `.env.example` a `.env`
-2. Ejecuta `AlbertTranslator.exe`
-3. En la GUI pulsa `Guardar config` y `Iniciar servidor`
-4. Abre la web y permite microfono
-5. Si falla, revisa `alberttranslator.log` junto al `.exe`
+- `GET /` interfaz web local
+- `GET /api/health` estado general y backend activo
+- `GET /api/model-status` estado del modelo de transcripcion
+- `POST /api/preload-model` precarga modelo Whisper
+- `POST /api/transcribe-translate` transcribe audio y traduce
+- `POST /api/translate-text` traduce texto directo
+- `POST /api/install-translation-pair` deshabilitado (`410`)
 
-## Versionado (SemVer)
+## Dependencias y buenas practicas
 
-El repositorio usa versionado semantico con tags `vX.Y.Z` y release automatica en cada push a `main`.
+- `requirements.txt`: dependencias runtime con rangos compatibles (`>=`, `<`).
+- `requirements-dev.txt`: herramientas de desarrollo y pruebas.
+- Recomendacion para reproducibilidad fuerte:
 
-- `feat:` incrementa `MINOR` (ejemplo: `v0.1.0 -> v0.2.0`)
-- `fix:` incrementa `PATCH` (ejemplo: `v0.1.0 -> v0.1.1`)
-- `BREAKING CHANGE` o `!` incrementa `MAJOR` (ejemplo: `v1.2.3 -> v2.0.0`)
-- Si no detecta regla, aplica `PATCH` por defecto
+```bash
+pip install pip-tools
+pip-compile requirements-dev.txt --output-file requirements-lock.txt
+```
 
-## Notas
+## Versionado y releases
 
-- `POST /api/transcribe-translate` es el endpoint activo para audio en vivo.
-- `POST /api/translate-text` traduce texto directo.
-- `GET /api/health` y `GET /api/model-status` informan backend de transcripcion y traduccion activo.
-- La transcripcion se procesa de forma continua mientras la escucha esta activa (sin esperar a detener).
-- La interfaz web incluye botones `Copiar` para transcripcion y traduccion completas.
-- `POST /api/install-translation-pair` esta deshabilitado (`410`) en este build.
-- Usa la app solo con consentimiento cuando aplique legalmente.
+- Se usa SemVer con tags `vX.Y.Z`.
+- Workflow: `.github/workflows/release.yml`.
+- Reglas por commit convencional:
+  - `feat:` incrementa `MINOR`
+  - `fix:` incrementa `PATCH`
+  - `BREAKING CHANGE` o `!` incrementa `MAJOR`
+
+## Flujo de colaboracion en GitHub
+
+1. Crea una rama desde `main`.
+2. Haz commits pequenos con Conventional Commits.
+3. Abre Pull Request usando la plantilla.
+4. Espera CI verde antes de merge.
+5. Al hacer push/merge a `main`, se genera release automatica.
+
+## Seguridad y privacidad
+
+- No subas archivos `.env` ni tokens al repositorio.
+- Usa este software solo con consentimiento de las personas grabadas.
+- Revisa `SECURITY.md` para reportar vulnerabilidades.
+
+## Documentacion adicional
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [SECURITY.md](./SECURITY.md)
+- [CHANGELOG.md](./CHANGELOG.md)
+
+## Licencia
+
+Este proyecto se distribuye bajo licencia MIT. Ver [LICENSE](./LICENSE).
