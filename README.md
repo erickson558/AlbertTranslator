@@ -2,7 +2,7 @@
 
 [![Release](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml)
 [![CI](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
 
@@ -148,4 +148,4 @@ pip-compile requirements-dev.txt --output-file requirements-lock.txt
 
 ## Licencia
 
-Este proyecto se distribuye bajo licencia MIT. Ver [LICENSE](./LICENSE).
+Este proyecto se distribuye bajo licencia Apache-2.0. Ver [LICENSE](./LICENSE).
