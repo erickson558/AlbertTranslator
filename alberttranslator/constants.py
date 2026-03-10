@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict
 
+APP_VERSION = "v0.0.4"
+
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = "8765"

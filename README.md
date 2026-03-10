@@ -6,6 +6,8 @@
 
 Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
 
+Version actual: `v0.0.4`
+
 ## Que hace el programa
 
 - Captura audio por bloques desde la web local (`/`).

@@ -7,7 +7,7 @@ from typing import Dict
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
-from .constants import MAX_AUDIO_BYTES
+from .constants import APP_VERSION, MAX_AUDIO_BYTES
 from .logging_setup import LOGGER, safe_settings_for_log
 from .paths import get_env_path, get_runtime_dir
 from .settings import (
@@ -61,6 +61,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
             app_host=settings["APP_HOST"],
             app_port=int(settings["APP_PORT"]),
             transcription_backend=settings["TRANSCRIPTION_BACKEND"],
+            app_version=APP_VERSION,
         )
 
     @app.get("/api/health")
@@ -68,6 +69,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
         return jsonify(
             {
                 "status": "ok",
+                "version": APP_VERSION,
                 "model": engine.model_status(),
                 "transcription": {"backend": engine.transcription_backend()},
                 "translation": {"backend": engine.translation_backend()},

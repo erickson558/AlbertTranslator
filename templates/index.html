@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Traductor de Voz en Vivo</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260216-3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=app_version) }}">
 </head>
 <body>
   <main class="app-shell">
     <header class="app-header">
       <h1>Traductor de Voz en Vivo</h1>
       <p>Transcripcion por voz del navegador y traduccion automatica con idioma origen y destino.</p>
+      <small>Version {{ app_version }}</small>
     </header>
 
     <section class="language-bar">
@@ -78,9 +79,10 @@
       apiBaseUrl: {{ request.host_url.rstrip('/') | tojson }},
       fallbackHost: {{ app_host | tojson }},
       fallbackPort: {{ app_port | tojson }},
-      transcriptionBackend: {{ transcription_backend | tojson }}
+      transcriptionBackend: {{ transcription_backend | tojson }},
+      appVersion: {{ app_version | tojson }}
     };
   </script>
-  <script src="{{ url_for('static', filename='app.js', v='20260216-3') }}"></script>
+  <script src="{{ url_for('static', filename='app.js', v=app_version) }}"></script>
 </body>
 </html>

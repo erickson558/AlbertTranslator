@@ -76,6 +76,8 @@ let browserSpeechRestartTimer = null;
 let browserInterimTranscript = "";
 let textTranslationQueue = [];
 let processingTextQueue = false;
+let translationTypeTimer = null;
+let translationTypeTarget = "";
 
 buildLanguageOptions();
 wireEvents();
@@ -265,6 +267,7 @@ function showError(message) {
 }
 
 function clearOutputs() {
+  resetTranslationTypewriter();
   browserInterimTranscript = "";
   transcriptOutput.value = "";
   translationOutput.value = "";
@@ -739,7 +742,7 @@ async function translateTextSegment(text) {
 
   const translation = cleanTranscript(payload.translation || "");
   if (translation) {
-    appendLine(translationOutput, translation);
+    appendTranslationLine(translation);
   }
 }
 
@@ -975,7 +978,7 @@ async function sendChunk(chunk) {
   }
 
   if (translation) {
-    appendLine(translationOutput, translation);
+    appendTranslationLine(translation);
   }
 }
 
@@ -1090,6 +1093,66 @@ function browserLanguageHint() {
 
 function cleanTranscript(raw) {
   return String(raw || "").replace(/\s+/g, " ").trim();
+}
+
+function resetTranslationTypewriter() {
+  if (translationTypeTimer) {
+    clearTimeout(translationTypeTimer);
+    translationTypeTimer = null;
+  }
+  translationTypeTarget = String(translationOutput?.value || "");
+}
+
+function appendTranslationLine(text) {
+  if (!text) {
+    return;
+  }
+
+  const current = String(translationTypeTarget || translationOutput.value || "");
+  const combined = current ? `${current}\n${text}` : text;
+  animateTranslationTo(combined);
+}
+
+function animateTranslationTo(targetText) {
+  translationTypeTarget = String(targetText || "");
+
+  if (translationTypeTimer) {
+    return;
+  }
+
+  const step = () => {
+    const current = String(translationOutput.value || "");
+    const target = String(translationTypeTarget || "");
+
+    if (current === target) {
+      translationTypeTimer = null;
+      return;
+    }
+
+    if (!target.startsWith(current)) {
+      translationOutput.value = target;
+      translationOutput.scrollTop = translationOutput.scrollHeight;
+      translationTypeTimer = null;
+      return;
+    }
+
+    const nextChar = target.charAt(current.length);
+    translationOutput.value = target.slice(0, current.length + 1);
+    translationOutput.scrollTop = translationOutput.scrollHeight;
+
+    let delayMs = 14;
+    if (nextChar === " ") {
+      delayMs = 8;
+    } else if (/[,.!?;:]/.test(nextChar)) {
+      delayMs = 34;
+    } else if (nextChar === "\n") {
+      delayMs = 20;
+    }
+
+    translationTypeTimer = setTimeout(step, delayMs);
+  };
+
+  step();
 }
 
 function appendLine(textarea, text) {
