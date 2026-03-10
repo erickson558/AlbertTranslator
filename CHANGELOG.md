@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [0.0.4] - 2026-03-10
+## [V0.0.5] - 2026-03-10
 
 ### Changed
 
@@ -12,7 +12,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added centralized app version constant and exposed version in `/api/health` and web UI.
 - Synchronized version reference in README with app runtime version.
 
-## [0.0.1] - 2026-03-03
+## [V0.0.1] - 2026-03-03
 
 ### Added
 

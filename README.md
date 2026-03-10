@@ -6,7 +6,7 @@
 
 Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
 
-Version actual: `v0.0.4`
+Version actual: `V0.0.5`
 
 ## Que hace el programa
 
@@ -25,7 +25,7 @@ Version actual: `v0.0.4`
 - Configuracion persistente con `.env`.
 - Validaciones de entrada y limites de tamano de audio (25 MB).
 - Logs para diagnostico (`alberttranslator.log` y `alberttranslator_fatal.log`).
-- Release automatica con tags semanticos (`vX.Y.Z`) en cada push a `main`.
+- Release automatica con tags semanticos (`VX.Y.Z`) en cada push a `main`.
 
 ## Arquitectura
 
@@ -121,7 +121,7 @@ pip-compile requirements-dev.txt --output-file requirements-lock.txt
 
 ## Versionado y releases
 
-- Se usa SemVer con tags `vX.Y.Z`.
+- Se usa SemVer con tags `VX.Y.Z`.
 - Workflow: `.github/workflows/release.yml`.
 - Reglas por commit convencional:
   - `feat:` incrementa `MINOR`
