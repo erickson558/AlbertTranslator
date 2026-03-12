@@ -17,20 +17,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump semantic version tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches: main
-          tag_prefix: v
-          default_bump: patch
-          initial_version: 0.0.0
+      - name: Read and validate app version
+        id: app_version
+        shell: bash
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$VERSION" =~ ^V[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION invalida: '$VERSION'. Debe cumplir formato VX.Y.Z"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not already exist
+        shell: bash
+        run: |
+          TAG="${{ steps.app_version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "El tag '$TAG' ya existe. Incrementa VERSION antes de hacer push a main."
+            exit 1
+          fi
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          TAG="${{ steps.app_version.outputs.version }}"
+          git tag "$TAG"
+          git push origin "$TAG"
 
       - name: Create GitHub release
-        if: steps.tag_version.outputs.new_tag != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          tag_name: ${{ steps.app_version.outputs.version }}
+          name: Release ${{ steps.app_version.outputs.version }}
           generate_release_notes: true

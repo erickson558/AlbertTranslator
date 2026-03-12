@@ -1,8 +1,23 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict
 
-APP_VERSION = "V0.0.5"
+
+def _read_app_version() -> str:
+    fallback = "V1.3.2"
+    version_file = Path(__file__).resolve().parent.parent / "VERSION"
+    try:
+        version = version_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return fallback
+
+    if not version:
+        return fallback
+    return version
+
+
+APP_VERSION = _read_app_version()
 
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
 DEFAULT_HOST = "127.0.0.1"

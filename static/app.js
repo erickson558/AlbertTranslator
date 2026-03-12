@@ -48,8 +48,8 @@ const TIMER_FLUSH_MS = Math.max(600, Math.min(CHUNK_MS, 1200));
 const MIN_BUFFER_MS_TO_FLUSH = 650;
 const SILENCE_FLUSH_MS = 450;
 const SPEECH_RMS_THRESHOLD = 0.008;
-const MAX_TEXT_QUEUE_ITEMS = 40;
 const BROWSER_STT_RESTART_DELAY_MS = 160;
+const TRANSCRIPT_TRANSLATION_DEBOUNCE_MS = 260;
 const SpeechRecognitionCtor =
   window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
@@ -74,10 +74,11 @@ let usingBrowserSpeechRecognition = false;
 let browserSpeechRecognition = null;
 let browserSpeechRestartTimer = null;
 let browserInterimTranscript = "";
-let textTranslationQueue = [];
-let processingTextQueue = false;
 let translationTypeTimer = null;
 let translationTypeTarget = "";
+let translationSyncTimer = null;
+let activeTranscriptTranslationController = null;
+let lastRequestedTranscript = "";
 
 buildLanguageOptions();
 wireEvents();
@@ -268,6 +269,7 @@ function showError(message) {
 
 function clearOutputs() {
   resetTranslationTypewriter();
+  cancelPendingTranscriptTranslationSync();
   browserInterimTranscript = "";
   transcriptOutput.value = "";
   translationOutput.value = "";
@@ -329,8 +331,7 @@ async function startListening() {
   uploadQueue = [];
   processingQueue = false;
   queueDropWarned = false;
-  textTranslationQueue = [];
-  processingTextQueue = false;
+  cancelPendingTranscriptTranslationSync();
   pcmBuffers = [];
   bufferedSamples = 0;
   silenceMs = 0;
@@ -402,7 +403,7 @@ async function stopListening() {
 
   if (usingBrowserSpeechRecognition) {
     stopBrowserSpeechRecognition();
-    if (processingTextQueue || textTranslationQueue.length > 0) {
+    if (isTranscriptTranslationPending()) {
       setStatus("processing", "Procesando traducciones finales");
     } else {
       setStatus("idle", "Inactivo");
@@ -516,7 +517,7 @@ function handleBrowserSpeechResult(event) {
       setTranscriptInterimPreview("");
       if (lastTextareaLine(transcriptOutput) !== text) {
         appendLine(transcriptOutput, text);
-        enqueueTextForTranslation(text);
+        scheduleTranscriptTranslationSync();
       }
     } else {
       interimText += (interimText ? " " : "") + text;
@@ -666,47 +667,56 @@ function clearTrailingInterimLine() {
   browserInterimTranscript = "";
 }
 
-function enqueueTextForTranslation(text) {
-  const normalized = cleanTranscript(text);
-  if (!normalized) {
+function isTranscriptTranslationPending() {
+  return Boolean(translationSyncTimer || activeTranscriptTranslationController);
+}
+
+function cancelPendingTranscriptTranslationSync() {
+  if (translationSyncTimer) {
+    clearTimeout(translationSyncTimer);
+    translationSyncTimer = null;
+  }
+
+  if (activeTranscriptTranslationController) {
+    activeTranscriptTranslationController.abort();
+    activeTranscriptTranslationController = null;
+  }
+
+  lastRequestedTranscript = "";
+}
+
+function scheduleTranscriptTranslationSync() {
+  if (translationSyncTimer) {
+    clearTimeout(translationSyncTimer);
+  }
+
+  translationSyncTimer = setTimeout(() => {
+    translationSyncTimer = null;
+    void syncTranslationFromTranscriptOutput();
+  }, TRANSCRIPT_TRANSLATION_DEBOUNCE_MS);
+}
+
+async function syncTranslationFromTranscriptOutput() {
+  const transcript = cleanTranscript(transcriptOutput.value || "");
+  if (!transcript) {
+    resetTranslationTypewriter();
+    translationOutput.value = "";
+    cancelPendingTranscriptTranslationSync();
     return;
   }
 
-  if (textTranslationQueue.length >= MAX_TEXT_QUEUE_ITEMS) {
-    textTranslationQueue.shift();
-  }
-
-  textTranslationQueue.push(normalized);
-  processTextTranslationQueue();
-}
-
-async function processTextTranslationQueue() {
-  if (processingTextQueue || textTranslationQueue.length === 0) {
+  if (transcript === lastRequestedTranscript) {
     return;
   }
 
-  processingTextQueue = true;
-  setStatus("processing", listening ? "Escuchando + traduciendo en vivo" : "Procesando traducciones");
-
-  while (textTranslationQueue.length > 0) {
-    const segment = textTranslationQueue.shift();
-    try {
-      await translateTextSegment(segment);
-      showError("");
-    } catch (error) {
-      showError(error.message || "No se pudo traducir el texto en vivo.");
-    }
+  if (activeTranscriptTranslationController) {
+    activeTranscriptTranslationController.abort();
   }
 
-  processingTextQueue = false;
-  if (listening) {
-    setStatus("listening", usingBrowserSpeechRecognition ? "Escuchando (Google en vivo)" : "Escuchando");
-  } else {
-    setStatus("idle", "Inactivo");
-  }
-}
+  lastRequestedTranscript = transcript;
+  const controller = new AbortController();
+  activeTranscriptTranslationController = controller;
 
-async function translateTextSegment(text) {
   const source = currentSourceLanguage();
   const target = currentTargetLanguage();
 
@@ -717,32 +727,63 @@ async function translateTextSegment(text) {
     targetSelect.value = target.code;
   }
 
+  setStatus(
+    "processing",
+    listening ? "Escuchando + traduciendo en vivo" : "Procesando traducciones"
+  );
+
   let response;
   try {
     response = await fetch(apiUrl("/api/translate-text"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
-        transcript: text,
+        transcript,
         source_language: source.code,
         target_language: target.code,
         detected_language: "",
       }),
     });
-  } catch (_error) {
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return;
+    }
     throw new Error(
       `No se pudo conectar con el servidor local (${API_BASE}) para traducir en vivo.`
     );
   }
 
-  const payload = await parseJsonResponse(response);
-  if (!response.ok) {
-    throw new Error(payload.error || `Error del servidor (${response.status}).`);
-  }
+  try {
+    const payload = await parseJsonResponse(response);
+    if (!response.ok) {
+      throw new Error(payload.error || `Error del servidor (${response.status}).`);
+    }
 
-  const translation = cleanTranscript(payload.translation || "");
-  if (translation) {
-    appendTranslationLine(translation);
+    if (activeTranscriptTranslationController !== controller) {
+      return;
+    }
+
+    const translation = cleanTranscript(payload.translation || "");
+    animateTranslationTo(translation);
+    showError("");
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      showError(error.message || "No se pudo traducir el texto en vivo.");
+    }
+  } finally {
+    if (activeTranscriptTranslationController === controller) {
+      activeTranscriptTranslationController = null;
+    }
+
+    if (listening) {
+      setStatus(
+        "listening",
+        usingBrowserSpeechRecognition ? "Escuchando (Google en vivo)" : "Escuchando"
+      );
+    } else {
+      setStatus("idle", "Inactivo");
+    }
   }
 }
 
@@ -967,7 +1008,6 @@ async function sendChunk(chunk) {
   }
 
   const transcript = cleanTranscript(payload.transcript || "");
-  const translation = cleanTranscript(payload.translation || "");
   const effectiveBackend = String(payload.transcription_backend || "").trim().toLowerCase();
   if (effectiveBackend === "google" || effectiveBackend === "faster_whisper") {
     updateBackendNote(effectiveBackend);
@@ -975,10 +1015,7 @@ async function sendChunk(chunk) {
 
   if (transcript) {
     appendLine(transcriptOutput, transcript);
-  }
-
-  if (translation) {
-    appendTranslationLine(translation);
+    scheduleTranscriptTranslationSync();
   }
 }
 
@@ -1101,16 +1138,6 @@ function resetTranslationTypewriter() {
     translationTypeTimer = null;
   }
   translationTypeTarget = String(translationOutput?.value || "");
-}
-
-function appendTranslationLine(text) {
-  if (!text) {
-    return;
-  }
-
-  const current = String(translationTypeTarget || translationOutput.value || "");
-  const combined = current ? `${current}\n${text}` : text;
-  animateTranslationTo(combined);
 }
 
 function animateTranslationTo(targetText) {

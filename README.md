@@ -6,7 +6,7 @@
 
 Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
 
-Version actual: `V0.0.5`
+Version actual: `V1.3.2`
 
 ## Que hace el programa
 
@@ -17,6 +17,7 @@ Version actual: `V0.0.5`
 - Traduce usando backend configurable:
   - `google` (`deep-translator`)
   - `libretranslate` (self-hosted o remoto)
+- Traduce unicamente el texto que aparece en el cuadro de transcripcion (sin mezclar segmentos previos/parciales).
 - Ofrece modo escritorio (GUI Tkinter) y modo servidor CLI.
 
 ## Caracteristicas principales
@@ -122,11 +123,10 @@ pip-compile requirements-dev.txt --output-file requirements-lock.txt
 ## Versionado y releases
 
 - Se usa SemVer con tags `VX.Y.Z`.
-- Workflow: `.github/workflows/release.yml`.
-- Reglas por commit convencional:
-  - `feat:` incrementa `MINOR`
-  - `fix:` incrementa `PATCH`
-  - `BREAKING CHANGE` o `!` incrementa `MAJOR`
+- Fuente unica de verdad: archivo `VERSION`.
+- La app lee la version desde `VERSION` y la expone en UI y `/api/health`.
+- El workflow `.github/workflows/release.yml` crea el tag/release exactamente con `VERSION` en cada push a `main`.
+- Regla operativa: cada commit a `main` debe incrementar `VERSION` para mantener coherencia entre app, repo y release.
 
 ## Flujo de colaboracion en GitHub
 
