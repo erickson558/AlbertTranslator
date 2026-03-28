@@ -6,7 +6,7 @@
 
 Aplicacion local para capturar audio desde el navegador, transcribirlo y traducirlo en tiempo casi real con modo web y modo escritorio.
 
-Version actual: `V1.4.1`
+Version actual: `V1.4.2`
 
 ## Que hace el programa
 
@@ -24,7 +24,7 @@ Version actual: `V1.4.1`
 - Health check HTTP con version visible en `/api/health`.
 - Versionado centralizado con archivo `VERSION`.
 - Compilacion a `.exe` con PyInstaller y icono local.
-- Release automatica en GitHub con tag `Vx.x.x` por cada push valido a `main`.
+- Release automatica en GitHub con tag `Vx.x.x` por cada push valido a `main` o disparo manual del workflow.
 
 ## Requisitos
 

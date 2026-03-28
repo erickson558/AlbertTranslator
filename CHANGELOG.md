@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [V1.4.2] - 2026-03-28
+
+### Changed
+
+- Updated the release workflow so it can run on every push to `main` and also via manual `workflow_dispatch`.
+- Bumped the project version to `V1.4.2` so the next release publishes with a fresh tag instead of failing on existing tag reuse.
+
 ## [V1.4.1] - 2026-03-27
 
 ### Changed
