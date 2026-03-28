@@ -115,6 +115,7 @@ jobs:
           tag_name: ${{ needs.validate-version.outputs.version }}
           name: Release ${{ needs.validate-version.outputs.version }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
-            release-assets/AlbertTranslator-V*.exe
-            release-assets/*.zip
+            release-assets/release-artifacts/*.exe
+            release-assets/release-artifacts/*.zip

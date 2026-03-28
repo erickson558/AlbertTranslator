@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [V1.4.1] - 2026-03-27
+
+### Changed
+
+- Fixed GitHub Release asset upload so the workflow attaches the versioned `.exe` and `.zip` produced by `download-artifact`.
+- Added `fail_on_unmatched_files: true` to stop the pipeline if a future release does not find its expected binaries.
+
 ## [V1.4.0] - 2026-03-27
 
 ### Changed

@@ -6,7 +6,7 @@
 
 Aplicacion local para capturar audio desde el navegador, transcribirlo y traducirlo en tiempo casi real con modo web y modo escritorio.
 
-Version actual: `V1.4.0`
+Version actual: `V1.4.1`
 
 ## Que hace el programa
 
