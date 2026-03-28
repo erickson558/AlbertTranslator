@@ -8,3 +8,4 @@ __all__ = ["create_app", "main", "run_entrypoint"]
 
 if __name__ == "__main__":
     run_entrypoint()
+
