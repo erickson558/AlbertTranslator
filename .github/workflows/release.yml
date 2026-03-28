@@ -24,7 +24,7 @@ jobs:
 
       # Usa Python para ejecutar el helper de versionado del proyecto.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -60,7 +60,7 @@ jobs:
 
       # Instala el runtime que usa el build.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
