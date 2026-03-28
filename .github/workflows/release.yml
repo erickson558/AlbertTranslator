@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   validate-version:
     name: Validate synced version
@@ -18,13 +21,13 @@ jobs:
     steps:
       # Descarga el historial completo para poder comparar tags correctamente.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       # Usa Python para ejecutar el helper de versionado del proyecto.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -56,11 +59,11 @@ jobs:
     steps:
       # Descarga el codigo que se va a compilar.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Instala el runtime que usa el build.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -71,7 +74,7 @@ jobs:
 
       # Publica los artefactos para que el job de release los adjunte.
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-assets
           path: |
@@ -89,7 +92,7 @@ jobs:
     steps:
       # Se requiere checkout con historial para crear y empujar el tag.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
