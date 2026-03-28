@@ -17,6 +17,10 @@ env/
 # Build artifacts
 build/
 dist/
+release-artifacts/
+AlbertTranslator.exe
+AlbertTranslator-*.exe
+AlbertTranslator-*.zip
 
 # Runtime logs/temp
 *.log

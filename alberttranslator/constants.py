@@ -5,7 +5,9 @@ from typing import Dict
 
 
 def _read_app_version() -> str:
-    fallback = "V1.3.2"
+    # Usa un valor neutro solo si el archivo VERSION no existe.
+    # La fuente real de verdad del proyecto es siempre el archivo VERSION en la raiz.
+    fallback = "V0.0.0"
     version_file = Path(__file__).resolve().parent.parent / "VERSION"
     try:
         version = version_file.read_text(encoding="utf-8").strip()

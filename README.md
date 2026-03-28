@@ -1,60 +1,63 @@
-﻿# AlbertTranslator
+# AlbertTranslator
 
 [![Release](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/release.yml)
 [![CI](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml/badge.svg)](https://github.com/erickson558/AlbertTranslator/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
-Aplicacion local para capturar audio del microfono desde el navegador, transcribirlo y traducirlo en tiempo casi real.
+Aplicacion local para capturar audio desde el navegador, transcribirlo y traducirlo en tiempo casi real con modo web y modo escritorio.
 
-Version actual: `V1.3.2`
+Version actual: `V1.4.0`
 
 ## Que hace el programa
 
-- Captura audio por bloques desde la web local (`/`).
-- Transcribe usando backend configurable:
-  - `google` (SpeechRecognition + servicio de Google)
-  - `faster_whisper` (modelo local)
-- Traduce usando backend configurable:
-  - `google` (`deep-translator`)
-  - `libretranslate` (self-hosted o remoto)
-- Traduce unicamente el texto que aparece en el cuadro de transcripcion (sin mezclar segmentos previos/parciales).
-- Ofrece modo escritorio (GUI Tkinter) y modo servidor CLI.
+- Levanta una interfaz web local para capturar audio del microfono.
+- Transcribe usando backend configurable (`google` o `faster_whisper`).
+- Traduce el texto detectado usando `deep-translator` o `LibreTranslate`.
+- Expone un lanzador de escritorio en Tkinter para usuarios no tecnicos.
+- Genera releases automaticos en GitHub con la misma version del proyecto.
 
-## Caracteristicas principales
+## Funcionalidades principales
 
-- Arquitectura separada `frontend` + `backend`.
-- Configuracion persistente con `.env`.
-- Validaciones de entrada y limites de tamano de audio (25 MB).
-- Logs para diagnostico (`alberttranslator.log` y `alberttranslator_fatal.log`).
-- Release automatica con tags semanticos (`VX.Y.Z`) en cada push a `main`.
-
-## Arquitectura
-
-- Frontend:
-  - `templates/index.html`
-  - `static/app.js`
-  - `static/style.css`
-- Backend:
-  - `alberttranslator/api.py`: API Flask y rutas
-  - `alberttranslator/speech_service.py`: transcripcion/traduccion
-  - `alberttranslator/settings.py`: carga y validacion de configuracion
-  - `alberttranslator/server.py`: arranque servidor
-  - `alberttranslator/gui.py`: interfaz de escritorio
-  - `alberttranslator/logging_setup.py`: logging y manejo de errores
+- UI web local servida por Flask.
+- Modo GUI con Tkinter y modo CLI para servidor local.
+- Configuracion persistente mediante `.env`.
+- Health check HTTP con version visible en `/api/health`.
+- Versionado centralizado con archivo `VERSION`.
+- Compilacion a `.exe` con PyInstaller y icono local.
+- Release automatica en GitHub con tag `Vx.x.x` por cada push valido a `main`.
 
 ## Requisitos
 
-- Python 3.10 o superior
-- Windows (modo GUI) o cualquier SO compatible con Flask (modo CLI)
-- Chrome/Edge con permiso de microfono
-- Para uso 100% local de STT: modelo Whisper en `models/whisper`
-- Internet si usas `TRANSCRIPTION_BACKEND=google` o `TRANSLATION_BACKEND=google`
+- Python 3.10 o superior.
+- Windows para compilar `.exe`.
+- Chrome o Edge con permiso de microfono para la experiencia web.
+- Git y GitHub CLI (`gh`) para publicar cambios y releases manuales.
 
-## Instalacion (desarrollo)
+## Dependencias
+
+Dependencias runtime en [requirements.txt](./requirements.txt):
+
+- `Flask`
+- `python-dotenv`
+- `langdetect`
+- `deep-translator`
+- `SpeechRecognition`
+- `faster-whisper`
+
+Dependencias de desarrollo en [requirements-dev.txt](./requirements-dev.txt):
+
+- runtime completo
+- `pyinstaller`
+- `pytest`
+- `pytest-cov`
+- `ruff`
+
+## Instalacion local
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
+python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
 copy .env.example .env
 python app.py
@@ -62,7 +65,7 @@ python app.py
 
 ## Uso
 
-### Modo escritorio (default)
+### Modo escritorio
 
 ```bash
 python app.py
@@ -74,73 +77,147 @@ python app.py
 python app.py --cli --host 127.0.0.1 --port 8765 --no-browser
 ```
 
-### Build portable (.exe)
+### Endpoints principales
+
+- `GET /`
+- `GET /api/health`
+- `GET /api/model-status`
+- `POST /api/preload-model`
+- `POST /api/transcribe-translate`
+- `POST /api/translate-text`
+
+## Compilacion a `.exe`
+
+El build principal se hace con [build_exe.ps1](./build_exe.ps1).
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_exe.ps1
 ```
 
-## Variables de entorno (`.env`)
+Resultado esperado:
 
-| Variable | Default | Descripcion |
-|---|---|---|
-| `APP_HOST` | `127.0.0.1` | Host del servidor local |
-| `APP_PORT` | `8765` | Puerto del servidor |
-| `APP_OPEN_BROWSER` | `1` | Abre navegador al iniciar |
-| `AUDIO_CHUNK_MS` | `2200` | Duracion del bloque de audio (500-30000) |
-| `TRANSCRIPTION_BACKEND` | `google` | `google` o `faster_whisper` |
-| `WHISPER_MODEL` | `base` | Modelo Whisper (`tiny`, `base`, `small`, `medium`, `large-v3`) |
-| `WHISPER_DEVICE` | `cpu` | Dispositivo Whisper (`cpu`, `cuda`) |
-| `WHISPER_COMPUTE_TYPE` | `int8` | Precision de inferencia |
-| `WHISPER_LOCAL_FILES_ONLY` | `1` | Fuerza uso de modelo local |
-| `TRANSLATION_BACKEND` | `google` | `google` o `libretranslate` |
-| `LIBRETRANSLATE_URL` | `http://127.0.0.1:5000` | Endpoint base de LibreTranslate |
-| `LIBRETRANSLATE_API_KEY` | vacio | API key opcional de LibreTranslate |
-| `LIBRETRANSLATE_TIMEOUT_SEC` | `15` | Timeout de peticiones a LibreTranslate |
-| `AUTO_INSTALL_TRANSLATION_PACKAGES` | `1` | Flag heredado para compatibilidad |
+- `AlbertTranslator.exe` en la misma carpeta donde esta `app.py`.
+- `release-artifacts\AlbertTranslator-Vx.x.x.exe`
+- `release-artifacts\AlbertTranslator-Vx.x.x-win64.zip`
 
-## API HTTP
+## Versionado
 
-- `GET /` interfaz web local
-- `GET /api/health` estado general y backend activo
-- `GET /api/model-status` estado del modelo de transcripcion
-- `POST /api/preload-model` precarga modelo Whisper
-- `POST /api/transcribe-translate` transcribe audio y traduce
-- `POST /api/translate-text` traduce texto directo
-- `POST /api/install-translation-pair` deshabilitado (`410`)
+Se usa Semantic Versioning con formato obligatorio `Vx.x.x`.
 
-## Dependencias y buenas practicas
+- `major`: cambios incompatibles o breaking changes.
+- `minor`: nuevas funciones compatibles.
+- `patch`: correcciones, ajustes menores y mejoras sin romper compatibilidad.
 
-- `requirements.txt`: dependencias runtime con rangos compatibles (`>=`, `<`).
-- `requirements-dev.txt`: herramientas de desarrollo y pruebas.
-- Recomendacion para reproducibilidad fuerte:
+Fuente unica de verdad:
+
+- [VERSION](./VERSION)
+
+Archivos sincronizados con la misma version:
+
+- APP runtime (`/api/health` y UI)
+- [VERSION](./VERSION)
+- [README.md](./README.md)
+- [CHANGELOG.md](./CHANGELOG.md)
+- Git tag
+- GitHub Release
+- nombre de artefactos del release
+
+Script recomendado para mantener todo alineado:
 
 ```bash
-pip install pip-tools
-pip-compile requirements-dev.txt --output-file requirements-lock.txt
+python scripts/version_sync.py check
+python scripts/version_sync.py bump patch
+python scripts/version_sync.py bump minor
+python scripts/version_sync.py bump major
 ```
 
-## Versionado y releases
+## Flujo manual recomendado para Git y GitHub
 
-- Se usa SemVer con tags `VX.Y.Z`.
-- Fuente unica de verdad: archivo `VERSION`.
-- La app lee la version desde `VERSION` y la expone en UI y `/api/health`.
-- El workflow `.github/workflows/release.yml` crea el tag/release exactamente con `VERSION` en cada push a `main`.
-- Regla operativa: cada commit a `main` debe incrementar `VERSION` para mantener coherencia entre app, repo y release.
+### 1. Verificar version actual
 
-## Flujo de colaboracion en GitHub
+```bash
+python scripts/version_sync.py check
+```
 
-1. Crea una rama desde `main`.
-2. Haz commits pequenos con Conventional Commits.
-3. Abre Pull Request usando la plantilla.
-4. Espera CI verde antes de merge.
-5. Al hacer push/merge a `main`, se genera release automatica.
+### 2. Incrementar version antes del commit relevante
 
-## Seguridad y privacidad
+```bash
+python scripts/version_sync.py bump patch
+```
 
-- No subas archivos `.env` ni tokens al repositorio.
-- Usa este software solo con consentimiento de las personas grabadas.
-- Revisa `SECURITY.md` para reportar vulnerabilidades.
+### 3. Revisar cambios
+
+```bash
+git status
+git diff --stat
+```
+
+### 4. Crear commit profesional
+
+```bash
+git add .
+git commit -m "feat(release): automatiza build, versionado y GitHub release Vx.x.x"
+```
+
+### 5. Subir a `main`
+
+```bash
+git push origin HEAD:main
+```
+
+### 6. Validar release publicado
+
+```bash
+gh release list --repo erickson558/AlbertTranslator --limit 5
+```
+
+## Workflow automatico de release
+
+El workflow [release.yml](./.github/workflows/release.yml):
+
+- se ejecuta en cada push a `main`
+- valida que `VERSION`, `README` y `CHANGELOG` esten alineados
+- compila el `.exe` en Windows
+- crea el tag `Vx.x.x`
+- publica el GitHub Release
+- adjunta el `.exe` y el `.zip` de distribucion
+
+## Estructura del proyecto
+
+```text
+.
+|-- .github/
+|   |-- workflows/
+|   |   |-- ci.yml
+|   |   `-- release.yml
+|-- alberttranslator/
+|   |-- api.py
+|   |-- constants.py
+|   |-- gui.py
+|   |-- main.py
+|   |-- server.py
+|   |-- settings.py
+|   `-- speech_service.py
+|-- scripts/
+|   `-- version_sync.py
+|-- static/
+|-- templates/
+|-- app.py
+|-- build_exe.ps1
+|-- requirements.txt
+|-- requirements-dev.txt
+|-- CHANGELOG.md
+|-- VERSION
+`-- LICENSE
+```
+
+## Buenas practicas operativas
+
+- No subir `.env`, modelos locales ni logs.
+- Crear una nueva version antes de cada commit relevante.
+- Mantener los commits con Conventional Commits.
+- No mezclar cambios funcionales y de release en un mismo commit sin necesidad.
+- Probar localmente antes de empujar a `main`.
 
 ## Documentacion adicional
 
@@ -150,4 +227,4 @@ pip-compile requirements-dev.txt --output-file requirements-lock.txt
 
 ## Licencia
 
-Este proyecto se distribuye bajo licencia Apache-2.0. Ver [LICENSE](./LICENSE).
+Este proyecto se distribuye bajo [Apache License 2.0](./LICENSE).

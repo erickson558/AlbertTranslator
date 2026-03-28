@@ -9,44 +9,112 @@ permissions:
   contents: write
 
 jobs:
-  version-and-release:
+  validate-version:
+    name: Validate synced version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+
     steps:
+      # Descarga el historial completo para poder comparar tags correctamente.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Read and validate app version
-        id: app_version
-        shell: bash
-        run: |
-          VERSION="$(tr -d '[:space:]' < VERSION)"
-          if [[ ! "$VERSION" =~ ^V[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "VERSION invalida: '$VERSION'. Debe cumplir formato VX.Y.Z"
-            exit 1
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      # Usa Python para ejecutar el helper de versionado del proyecto.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
+      # Verifica que VERSION, README y CHANGELOG esten alineados.
+      - name: Validate version sync
+        run: python scripts/version_sync.py check
+
+      # Expone la version actual al resto de jobs.
+      - name: Read VERSION file
+        id: version
+        shell: bash
+        run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      # Falla si alguien hizo push a main sin incrementar VERSION.
       - name: Ensure tag does not already exist
         shell: bash
         run: |
-          TAG="${{ steps.app_version.outputs.version }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
+          TAG="${{ steps.version.outputs.value }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
             echo "El tag '$TAG' ya existe. Incrementa VERSION antes de hacer push a main."
             exit 1
           fi
 
+  build-windows:
+    name: Build Windows executable
+    needs: validate-version
+    runs-on: windows-latest
+
+    steps:
+      # Descarga el codigo que se va a compilar.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Instala el runtime que usa el build.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Ejecuta el build oficial del proyecto para producir el exe y el zip.
+      - name: Build release artifacts
+        shell: pwsh
+        run: .\build_exe.ps1
+
+      # Publica los artefactos para que el job de release los adjunte.
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            AlbertTranslator.exe
+            release-artifacts/*.exe
+            release-artifacts/*.zip
+
+  publish-release:
+    name: Publish GitHub release
+    needs:
+      - validate-version
+      - build-windows
+    runs-on: ubuntu-latest
+
+    steps:
+      # Se requiere checkout con historial para crear y empujar el tag.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Descarga los artefactos construidos en Windows.
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+
+      # Crea el tag solo despues de que el build paso correctamente.
       - name: Create and push tag
         shell: bash
         run: |
-          TAG="${{ steps.app_version.outputs.version }}"
+          TAG="${{ needs.validate-version.outputs.version }}"
           git tag "$TAG"
           git push origin "$TAG"
 
+      # Publica el release y adjunta el exe + zip versionados.
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.app_version.outputs.version }}
-          name: Release ${{ steps.app_version.outputs.version }}
+          tag_name: ${{ needs.validate-version.outputs.version }}
+          name: Release ${{ needs.validate-version.outputs.version }}
           generate_release_notes: true
+          files: |
+            release-assets/AlbertTranslator-V*.exe
+            release-assets/*.zip

@@ -13,22 +13,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Trae el codigo a la VM del runner.
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Usa una version moderna y estable de Python para validaciones.
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
+      # Instala dependencias de desarrollo para compilar, testear y validar versionado.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
+      # Asegura que VERSION, README y CHANGELOG no se hayan desalineado.
+      - name: Validate synced version
+        run: python scripts/version_sync.py check
+
+      # Compila el codigo fuente para detectar errores sintacticos.
       - name: Compile source
-        run: python -m compileall app.py alberttranslator
+        run: python -m compileall app.py alberttranslator scripts
 
+      # Verifica que la app Flask principal pueda instanciarse.
       - name: Import smoke test
         run: |
           python -c "from alberttranslator.api import create_app; app = create_app(); print(app.name)"

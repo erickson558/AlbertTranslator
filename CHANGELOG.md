@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [V1.4.0] - 2026-03-27
+
+### Changed
+
+- Added `scripts/version_sync.py` to validate and bump `VERSION`, `README.md` and `CHANGELOG.md` together.
+- Updated build strategy so the executable is produced next to `app.py` and packaged for GitHub Releases.
+- Prepared release automation to compile on Windows and attach build artifacts to each push on `main`.
+- Standardized development dependencies to include `pyinstaller` for reproducible builds.
+
 ## [V1.3.2] - 2026-03-12
 
 ### Changed

@@ -19,10 +19,11 @@ copy .env.example .env
 ## Flujo recomendado
 
 1. Crea una rama desde `main`.
-2. Implementa cambios pequenos y atomicos.
-3. Escribe commits con Conventional Commits.
-4. Ejecuta validaciones locales.
-5. Abre Pull Request usando la plantilla.
+2. Incrementa `VERSION` con `python scripts/version_sync.py bump patch|minor|major` antes de un cambio relevante.
+3. Implementa cambios pequenos y atomicos.
+4. Escribe commits con Conventional Commits.
+5. Ejecuta validaciones locales.
+6. Abre Pull Request usando la plantilla.
 
 ## Convencion de commits
 
@@ -47,6 +48,7 @@ refactor!: cambia contrato de /api/transcribe-translate
 ## Validaciones locales
 
 ```bash
+python scripts/version_sync.py check
 python -m compileall app.py alberttranslator
 pytest -q
 ```
