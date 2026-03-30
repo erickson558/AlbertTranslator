@@ -99,7 +99,7 @@ jobs:
 
       # Descarga los artefactos construidos en Windows.
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-assets
           path: release-assets
