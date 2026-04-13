@@ -114,7 +114,7 @@ jobs:
 
       # Publica el release y adjunta el exe + zip versionados.
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.validate-version.outputs.version }}
           name: Release ${{ needs.validate-version.outputs.version }}
