@@ -21,7 +21,12 @@ class ServerController:
 
     @property
     def running(self) -> bool:
-        return self._server is not None
+        # Verifica servidor Y hilo vivo para detectar cierres inesperados del hilo
+        return (
+            self._server is not None
+            and self._thread is not None
+            and self._thread.is_alive()
+        )
 
     def start(self, settings: Dict[str, str]) -> None:
         host = settings["APP_HOST"]

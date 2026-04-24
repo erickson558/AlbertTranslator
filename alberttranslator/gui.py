@@ -482,6 +482,12 @@ def launch_desktop_gui() -> None:
     logs_btn.configure(command=open_logs)
     exit_btn.configure(command=close_app)
 
+    def _poll_server_state() -> None:
+        # Refresca botones cada 2 s para reflejar si el servidor murio inesperadamente
+        set_button_state()
+        root.after(2000, _poll_server_state)
+
     set_button_state()
+    root.after(2000, _poll_server_state)
     root.protocol("WM_DELETE_WINDOW", close_app)
     root.mainloop()

@@ -105,8 +105,15 @@ def coerce_timeout_seconds(raw: str) -> float:
 
 
 def is_valid_language_code(value: str) -> bool:
+    # Acepta codigos simples ("en", "es") y con subtag regional ("zh-cn", "zh-tw")
     code = str(value).strip().lower()
-    return len(code) >= 2 and len(code) <= 8 and code.isalpha()
+    if not code or len(code) > 16:
+        return False
+    parts = code.split("-")
+    return (
+        len(parts) <= 2
+        and all(2 <= len(p) <= 8 and p.isalpha() for p in parts)
+    )
 
 
 def coerce_settings(raw: Dict[str, str] | None = None) -> Dict[str, str]:

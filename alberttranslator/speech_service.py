@@ -16,6 +16,8 @@ import alberttranslator.runtime_dependencies as runtime_dependencies
 
 
 _LANGDETECT_FACTORY_SEEDED = False
+# Protege la inicializacion del seed de langdetect contra condiciones de carrera en Flask multi-hilo
+_LANGDETECT_SEED_LOCK = Lock()
 _GOOGLE_TRANSLATOR_CACHE: dict[tuple[str, str], object] = {}
 _GOOGLE_TRANSLATOR_CACHE_LOCK = Lock()
 
@@ -397,10 +399,13 @@ def detect_language_code(text: str) -> str | None:
     except Exception:
         return None
 
+    # Double-checked locking: evita re-entrada innecesaria al lock en el caso mas comun
     global _LANGDETECT_FACTORY_SEEDED
     if not _LANGDETECT_FACTORY_SEEDED:
-        DetectorFactory.seed = 0
-        _LANGDETECT_FACTORY_SEEDED = True
+        with _LANGDETECT_SEED_LOCK:
+            if not _LANGDETECT_FACTORY_SEEDED:
+                DetectorFactory.seed = 0
+                _LANGDETECT_FACTORY_SEEDED = True
 
     try:
         detected = str(detect(sample)).strip().lower()

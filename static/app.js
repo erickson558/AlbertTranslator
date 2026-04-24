@@ -1,3 +1,4 @@
+// Lista de idiomas disponibles para transcripcion/traduccion
 const COMMON_LANGUAGES = [
   { name: "Espanol", code: "es" },
   { name: "Ingles", code: "en" },
@@ -20,9 +21,379 @@ const COMMON_LANGUAGES = [
   { name: "Hebreo", code: "he" },
 ];
 
-const SOURCE_LANGUAGES = [{ name: "Detectar automaticamente", code: "auto" }, ...COMMON_LANGUAGES];
+// --- i18n: diccionario de cadenas de interfaz por idioma ---
+const UI_TRANSLATIONS = {
+  es: {
+    title: "Traductor de Voz en Vivo",
+    subtitle: "Transcripcion por voz del navegador y traduccion automatica con idioma origen y destino.",
+    uilangLabel: "Idioma de la interfaz",
+    sourceLangLabel: "Idioma origen",
+    targetLangLabel: "Idioma destino",
+    swapBtn: "⇄ Intercambiar",
+    backendLabel: "Backend de transcripcion",
+    backendGoogleOption: "google (nube)",
+    backendWhisperOption: "faster_whisper (local)",
+    backendNoteGoogleLive: "Usando Google Speech en vivo desde el navegador (transcripcion casi en tiempo real). Para mayor precision, fija el idioma origen en lugar de auto.",
+    backendNoteGoogleChunk: "Usando Google Speech por bloques (tu navegador no soporta modo en vivo).",
+    backendNoteWhisper: "Usando faster_whisper local (recomendado para uso sin conexion).",
+    startBtn: "Iniciar escucha",
+    stopBtn: "Detener",
+    clearBtn: "Limpiar",
+    statusIdle: "Inactivo",
+    transcriptTitle: "Transcripcion",
+    translationTitle: "Traduccion",
+    copyBtn: "Copiar",
+    copiedBtn: "Copiado",
+    transcriptPlaceholder: "La transcripcion aparecera aqui...",
+    translationPlaceholder: "La traduccion aparecera aqui...",
+    autoDetect: "Detectar automaticamente",
+    footerHint: "Permite el microfono para capturar audio y enviarlo al servidor local para transcripcion.",
+    donateBtn: "🍺 Comprame una cerveza",
+    errNoServer: "No hay conexion con el servidor local. Abre AlbertTranslator e inicia el servidor. Si falla, revisa alberttranslator.log junto al .exe.",
+    errNoTarget: "Selecciona un idioma destino valido.",
+    errNoMic: "Tu navegador no permite capturar microfono.",
+    errNoAudioCtx: "Tu navegador no soporta AudioContext para captura de voz.",
+    errNoScriptProc: "Este navegador no soporta ScriptProcessor para capturar audio.",
+    errNoLiveSpeech: "Tu navegador no soporta transcripcion en vivo. Cambia a faster_whisper o usa Chrome/Edge.",
+    errMicLivePrefix: "No se pudo acceder al microfono para transcripcion en vivo. Detalle: ",
+    errQueueDrop: "La captura va mas rapido que el procesamiento. Se descartaron bloques antiguos para mantener estabilidad.",
+    errNoConnect: "No se pudo conectar con el servidor local",
+    errServerDetail: "Verifica que AlbertTranslator este abierto. Revisa alberttranslator.log junto al .exe.",
+    errCopyEmptyTranscript: "No hay transcripcion para copiar.",
+    errCopyEmptyTranslation: "No hay traduccion para copiar.",
+    errCopyFailed: "No se pudo copiar al portapapeles.",
+    errSwapAuto: "No se puede intercambiar cuando el idioma origen es automatico.",
+    errJsonInvalid: "La respuesta del servidor no es JSON valido.",
+    errStartLiveDetail: "No se pudo iniciar la transcripcion en vivo de Google. Detalle: ",
+    statusStarting: "Iniciando escucha...",
+    statusStopping: "Deteniendo...",
+    statusListening: "Escuchando",
+    statusListeningLive: "Escuchando (Google en vivo)",
+    statusFinalBrowser: "Procesando traducciones finales",
+    statusFinalQueue: "Procesando bloques finales",
+    statusListeningProcessing: "Escuchando + procesando",
+    statusTranslatingLive: "Escuchando + traduciendo en vivo",
+    statusTranslating: "Procesando traducciones",
+    errSpeechNotAllowed: "Permiso de microfono bloqueado para transcripcion en vivo.",
+    errSpeechNoMic: "No se detecto microfono para transcripcion en vivo.",
+    errSpeechNetwork: "Error de red en Google Speech. Verifica tu conexion.",
+    errSpeechGeneric: "Error en transcripcion en vivo",
+  },
+  en: {
+    title: "Live Voice Translator",
+    subtitle: "Browser voice transcription and automatic translation with source and target language.",
+    uilangLabel: "Interface language",
+    sourceLangLabel: "Source language",
+    targetLangLabel: "Target language",
+    swapBtn: "⇄ Swap",
+    backendLabel: "Transcription backend",
+    backendGoogleOption: "google (cloud)",
+    backendWhisperOption: "faster_whisper (local)",
+    backendNoteGoogleLive: "Using live Google Speech from browser (near real-time transcription). For better accuracy, fix the source language instead of auto.",
+    backendNoteGoogleChunk: "Using Google Speech in blocks (your browser does not support live mode).",
+    backendNoteWhisper: "Using local faster_whisper (recommended for offline use).",
+    startBtn: "Start listening",
+    stopBtn: "Stop",
+    clearBtn: "Clear",
+    statusIdle: "Idle",
+    transcriptTitle: "Transcription",
+    translationTitle: "Translation",
+    copyBtn: "Copy",
+    copiedBtn: "Copied",
+    transcriptPlaceholder: "Transcription will appear here...",
+    translationPlaceholder: "Translation will appear here...",
+    autoDetect: "Auto-detect",
+    footerHint: "Allow microphone access to capture audio and send it to the local server for transcription.",
+    donateBtn: "🍺 Buy me a beer",
+    errNoServer: "No connection to local server. Open AlbertTranslator and start the server. If it fails, check alberttranslator.log next to the .exe.",
+    errNoTarget: "Select a valid target language.",
+    errNoMic: "Your browser does not allow microphone access.",
+    errNoAudioCtx: "Your browser does not support AudioContext for voice capture.",
+    errNoScriptProc: "This browser does not support ScriptProcessor for audio capture.",
+    errNoLiveSpeech: "Your browser does not support live transcription. Switch to faster_whisper or use Chrome/Edge.",
+    errMicLivePrefix: "Could not access microphone for live transcription. Detail: ",
+    errQueueDrop: "Capture is faster than processing. Old blocks were dropped to maintain stability.",
+    errNoConnect: "Could not connect to local server",
+    errServerDetail: "Verify AlbertTranslator is open. Check alberttranslator.log next to the .exe.",
+    errCopyEmptyTranscript: "No transcription to copy.",
+    errCopyEmptyTranslation: "No translation to copy.",
+    errCopyFailed: "Could not copy to clipboard.",
+    errSwapAuto: "Cannot swap when source language is set to auto.",
+    errJsonInvalid: "Server response is not valid JSON.",
+    errStartLiveDetail: "Could not start Google live transcription. Detail: ",
+    statusStarting: "Starting...",
+    statusStopping: "Stopping...",
+    statusListening: "Listening",
+    statusListeningLive: "Listening (Google live)",
+    statusFinalBrowser: "Processing final translations",
+    statusFinalQueue: "Processing final blocks",
+    statusListeningProcessing: "Listening + processing",
+    statusTranslatingLive: "Listening + translating live",
+    statusTranslating: "Processing translations",
+    errSpeechNotAllowed: "Microphone permission blocked for live transcription.",
+    errSpeechNoMic: "No microphone detected for live transcription.",
+    errSpeechNetwork: "Google Speech network error. Check your connection.",
+    errSpeechGeneric: "Live transcription error",
+  },
+  pt: {
+    title: "Tradutor de Voz ao Vivo",
+    subtitle: "Transcricao de voz do navegador e traducao automatica com idioma de origem e destino.",
+    uilangLabel: "Idioma da interface",
+    sourceLangLabel: "Idioma de origem",
+    targetLangLabel: "Idioma de destino",
+    swapBtn: "⇄ Trocar",
+    backendLabel: "Backend de transcricao",
+    backendGoogleOption: "google (nuvem)",
+    backendWhisperOption: "faster_whisper (local)",
+    backendNoteGoogleLive: "Usando Google Speech ao vivo do navegador (transcricao quase em tempo real). Para maior precisao, fixe o idioma de origem em vez de auto.",
+    backendNoteGoogleChunk: "Usando Google Speech em blocos (seu navegador nao suporta modo ao vivo).",
+    backendNoteWhisper: "Usando faster_whisper local (recomendado para uso offline).",
+    startBtn: "Iniciar escuta",
+    stopBtn: "Parar",
+    clearBtn: "Limpar",
+    statusIdle: "Inativo",
+    transcriptTitle: "Transcricao",
+    translationTitle: "Traducao",
+    copyBtn: "Copiar",
+    copiedBtn: "Copiado",
+    transcriptPlaceholder: "A transcricao aparecera aqui...",
+    translationPlaceholder: "A traducao aparecera aqui...",
+    autoDetect: "Detectar automaticamente",
+    footerHint: "Permita o microfone para capturar audio e envia-lo ao servidor local para transcricao.",
+    donateBtn: "🍺 Me pague uma cerveja",
+    errNoServer: "Sem conexao com o servidor local. Abra o AlbertTranslator e inicie o servidor.",
+    errNoTarget: "Selecione um idioma de destino valido.",
+    errNoMic: "Seu navegador nao permite acesso ao microfone.",
+    errNoAudioCtx: "Seu navegador nao suporta AudioContext para captura de voz.",
+    errNoScriptProc: "Este navegador nao suporta ScriptProcessor para captura de audio.",
+    errNoLiveSpeech: "Seu navegador nao suporta transcricao ao vivo. Mude para faster_whisper ou use Chrome/Edge.",
+    errMicLivePrefix: "Nao foi possivel acessar o microfone para transcricao ao vivo. Detalhe: ",
+    errQueueDrop: "A captura esta mais rapida que o processamento. Blocos antigos foram descartados.",
+    errNoConnect: "Nao foi possivel conectar ao servidor local",
+    errServerDetail: "Verifique se o AlbertTranslator esta aberto. Veja alberttranslator.log.",
+    errCopyEmptyTranscript: "Nenhuma transcricao para copiar.",
+    errCopyEmptyTranslation: "Nenhuma traducao para copiar.",
+    errCopyFailed: "Nao foi possivel copiar para a area de transferencia.",
+    errSwapAuto: "Nao e possivel trocar quando o idioma de origem e automatico.",
+    errJsonInvalid: "A resposta do servidor nao e JSON valido.",
+    errStartLiveDetail: "Nao foi possivel iniciar a transcricao ao vivo do Google. Detalhe: ",
+    statusStarting: "Iniciando...",
+    statusStopping: "Parando...",
+    statusListening: "Ouvindo",
+    statusListeningLive: "Ouvindo (Google ao vivo)",
+    statusFinalBrowser: "Processando traducoes finais",
+    statusFinalQueue: "Processando blocos finais",
+    statusListeningProcessing: "Ouvindo + processando",
+    statusTranslatingLive: "Ouvindo + traduzindo ao vivo",
+    statusTranslating: "Processando traducoes",
+    errSpeechNotAllowed: "Permissao de microfone bloqueada para transcricao ao vivo.",
+    errSpeechNoMic: "Nenhum microfone detectado para transcricao ao vivo.",
+    errSpeechNetwork: "Erro de rede no Google Speech. Verifique sua conexao.",
+    errSpeechGeneric: "Erro na transcricao ao vivo",
+  },
+  fr: {
+    title: "Traducteur Vocal en Direct",
+    subtitle: "Transcription vocale du navigateur et traduction automatique avec langue source et cible.",
+    uilangLabel: "Langue de l'interface",
+    sourceLangLabel: "Langue source",
+    targetLangLabel: "Langue cible",
+    swapBtn: "⇄ Inverser",
+    backendLabel: "Backend de transcription",
+    backendGoogleOption: "google (cloud)",
+    backendWhisperOption: "faster_whisper (local)",
+    backendNoteGoogleLive: "Utilisation de Google Speech en direct depuis le navigateur. Pour plus de precision, fixez la langue source au lieu de auto.",
+    backendNoteGoogleChunk: "Utilisation de Google Speech par blocs (votre navigateur ne supporte pas le mode direct).",
+    backendNoteWhisper: "Utilisation de faster_whisper local (recommande hors ligne).",
+    startBtn: "Demarrer l'ecoute",
+    stopBtn: "Arreter",
+    clearBtn: "Effacer",
+    statusIdle: "Inactif",
+    transcriptTitle: "Transcription",
+    translationTitle: "Traduction",
+    copyBtn: "Copier",
+    copiedBtn: "Copie",
+    transcriptPlaceholder: "La transcription apparaitra ici...",
+    translationPlaceholder: "La traduction apparaitra ici...",
+    autoDetect: "Detecter automatiquement",
+    footerHint: "Autorisez le microphone pour capturer l'audio et l'envoyer au serveur local.",
+    donateBtn: "🍺 Offrez-moi une biere",
+    errNoServer: "Pas de connexion au serveur local. Ouvrez AlbertTranslator et demarrez le serveur.",
+    errNoTarget: "Selectionnez une langue cible valide.",
+    errNoMic: "Votre navigateur ne permet pas l'acces au microphone.",
+    errNoAudioCtx: "Votre navigateur ne supporte pas AudioContext.",
+    errNoScriptProc: "Ce navigateur ne supporte pas ScriptProcessor.",
+    errNoLiveSpeech: "Votre navigateur ne supporte pas la transcription en direct. Utilisez Chrome/Edge.",
+    errMicLivePrefix: "Impossible d'acceder au microphone. Detail: ",
+    errQueueDrop: "La capture est plus rapide que le traitement. Des blocs anciens ont ete supprimes.",
+    errNoConnect: "Impossible de se connecter au serveur local",
+    errServerDetail: "Verifiez qu'AlbertTranslator est ouvert. Consultez alberttranslator.log.",
+    errCopyEmptyTranscript: "Aucune transcription a copier.",
+    errCopyEmptyTranslation: "Aucune traduction a copier.",
+    errCopyFailed: "Impossible de copier dans le presse-papiers.",
+    errSwapAuto: "Impossible d'inverser quand la langue source est automatique.",
+    errJsonInvalid: "La reponse du serveur n'est pas du JSON valide.",
+    errStartLiveDetail: "Impossible de demarrer la transcription en direct Google. Detail: ",
+    statusStarting: "Demarrage...",
+    statusStopping: "Arret...",
+    statusListening: "Ecoute",
+    statusListeningLive: "Ecoute (Google direct)",
+    statusFinalBrowser: "Traitement des traductions finales",
+    statusFinalQueue: "Traitement des blocs finaux",
+    statusListeningProcessing: "Ecoute + traitement",
+    statusTranslatingLive: "Ecoute + traduction en direct",
+    statusTranslating: "Traitement des traductions",
+    errSpeechNotAllowed: "Permission microphone bloquee.",
+    errSpeechNoMic: "Aucun microphone detecte.",
+    errSpeechNetwork: "Erreur reseau Google Speech. Verifiez votre connexion.",
+    errSpeechGeneric: "Erreur de transcription en direct",
+  },
+  de: {
+    title: "Live-Sprach-Ubersetzer",
+    subtitle: "Browser-Sprachtranskription und automatische Ubersetzung mit Quell- und Zielsprache.",
+    uilangLabel: "Sprache der Oberflache",
+    sourceLangLabel: "Quellsprache",
+    targetLangLabel: "Zielsprache",
+    swapBtn: "⇄ Tauschen",
+    backendLabel: "Transkriptions-Backend",
+    backendGoogleOption: "google (Cloud)",
+    backendWhisperOption: "faster_whisper (lokal)",
+    backendNoteGoogleLive: "Google Speech live im Browser. Fur mehr Prazision, legen Sie die Quellsprache fest statt Auto.",
+    backendNoteGoogleChunk: "Google Speech in Blocken (Ihr Browser unterstutzt den Live-Modus nicht).",
+    backendNoteWhisper: "Lokales faster_whisper (empfohlen fur Offline-Nutzung).",
+    startBtn: "Zuhoren starten",
+    stopBtn: "Stoppen",
+    clearBtn: "Loschen",
+    statusIdle: "Inaktiv",
+    transcriptTitle: "Transkription",
+    translationTitle: "Ubersetzung",
+    copyBtn: "Kopieren",
+    copiedBtn: "Kopiert",
+    transcriptPlaceholder: "Die Transkription erscheint hier...",
+    translationPlaceholder: "Die Ubersetzung erscheint hier...",
+    autoDetect: "Automatisch erkennen",
+    footerHint: "Erlauben Sie das Mikrofon, um Audio aufzunehmen und an den lokalen Server zu senden.",
+    donateBtn: "🍺 Kauf mir ein Bier",
+    errNoServer: "Keine Verbindung zum lokalen Server. Offnen Sie AlbertTranslator und starten Sie den Server.",
+    errNoTarget: "Wahlen Sie eine gultige Zielsprache.",
+    errNoMic: "Ihr Browser erlaubt keinen Mikrofon-Zugriff.",
+    errNoAudioCtx: "Ihr Browser unterstutzt AudioContext nicht.",
+    errNoScriptProc: "Dieser Browser unterstutzt ScriptProcessor nicht.",
+    errNoLiveSpeech: "Ihr Browser unterstutzt keine Live-Transkription. Verwenden Sie Chrome/Edge.",
+    errMicLivePrefix: "Mikrofon-Zugriff nicht moglich. Detail: ",
+    errQueueDrop: "Die Aufnahme ist schneller als die Verarbeitung. Alte Blocke wurden verworfen.",
+    errNoConnect: "Verbindung zum lokalen Server fehlgeschlagen",
+    errServerDetail: "Prufen Sie ob AlbertTranslator geoffnet ist. Siehe alberttranslator.log.",
+    errCopyEmptyTranscript: "Keine Transkription zum Kopieren.",
+    errCopyEmptyTranslation: "Keine Ubersetzung zum Kopieren.",
+    errCopyFailed: "Kopieren in die Zwischenablage fehlgeschlagen.",
+    errSwapAuto: "Tauschen nicht moglich bei automatischer Quellsprache.",
+    errJsonInvalid: "Server-Antwort ist kein gultiges JSON.",
+    errStartLiveDetail: "Google Live-Transkription konnte nicht gestartet werden. Detail: ",
+    statusStarting: "Starte...",
+    statusStopping: "Stoppe...",
+    statusListening: "Hort zu",
+    statusListeningLive: "Hort zu (Google live)",
+    statusFinalBrowser: "Finale Ubersetzungen werden verarbeitet",
+    statusFinalQueue: "Finale Blocke werden verarbeitet",
+    statusListeningProcessing: "Hort zu + verarbeitet",
+    statusTranslatingLive: "Hort zu + ubersetzt live",
+    statusTranslating: "Ubersetzungen werden verarbeitet",
+    errSpeechNotAllowed: "Mikrofon-Berechtigung gesperrt.",
+    errSpeechNoMic: "Kein Mikrofon erkannt.",
+    errSpeechNetwork: "Google Speech Netzwerkfehler. Verbindung prufen.",
+    errSpeechGeneric: "Live-Transkription Fehler",
+  },
+};
+
+// Idioma de la interfaz actual; se persiste en localStorage entre sesiones
+let currentUiLang = localStorage.getItem("albert_ui_lang") || "es";
+
+// Devuelve la cadena i18n para la clave dada en el idioma actual, con fallback a ES
+function t(key) {
+  const dict = UI_TRANSLATIONS[currentUiLang] || UI_TRANSLATIONS.es;
+  return Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : (UI_TRANSLATIONS.es[key] || key);
+}
+
+// Actualiza todos los elementos del DOM con el idioma de interfaz actual
+function applyUiLanguage() {
+  const pageTitle = document.getElementById("page-title");
+  if (pageTitle) { pageTitle.textContent = t("title"); document.title = t("title"); }
+
+  const pageSubtitle = document.getElementById("page-subtitle");
+  if (pageSubtitle) pageSubtitle.textContent = t("subtitle");
+
+  const labelUiLang = document.getElementById("label-ui-lang");
+  if (labelUiLang) labelUiLang.textContent = t("uilangLabel");
+
+  const labelSource = document.getElementById("label-source-lang");
+  if (labelSource) labelSource.textContent = t("sourceLangLabel");
+
+  const labelTarget = document.getElementById("label-target-lang");
+  if (labelTarget) labelTarget.textContent = t("targetLangLabel");
+
+  if (swapBtn) swapBtn.textContent = t("swapBtn");
+
+  const labelBackend = document.getElementById("label-backend");
+  if (labelBackend) labelBackend.textContent = t("backendLabel");
+
+  // Actualiza textos de las opciones del selector de backend
+  if (transcriptionBackendSelect) {
+    for (const opt of transcriptionBackendSelect.options) {
+      if (opt.value === "google") opt.textContent = t("backendGoogleOption");
+      else if (opt.value === "faster_whisper") opt.textContent = t("backendWhisperOption");
+    }
+  }
+
+  // Solo actualiza botones de control cuando no hay escucha activa
+  if (!listening) {
+    if (startBtn) startBtn.textContent = t("startBtn");
+  }
+  if (stopBtn && stopBtn.disabled) stopBtn.textContent = t("stopBtn");
+  if (clearBtn) clearBtn.textContent = t("clearBtn");
+
+  const transcriptTitleEl = document.getElementById("transcript-title");
+  if (transcriptTitleEl) transcriptTitleEl.textContent = t("transcriptTitle");
+
+  const translationTitleEl = document.getElementById("translation-title");
+  if (translationTitleEl) translationTitleEl.textContent = t("translationTitle");
+
+  // Actualiza botones Copiar solo si no estan en estado "copiado"
+  if (copyTranscriptBtn && !copyTranscriptBtn.classList.contains("copied")) {
+    copyTranscriptBtn.textContent = t("copyBtn");
+  }
+  if (copyTranslationBtn && !copyTranslationBtn.classList.contains("copied")) {
+    copyTranslationBtn.textContent = t("copyBtn");
+  }
+
+  if (transcriptOutput) transcriptOutput.placeholder = t("transcriptPlaceholder");
+  if (translationOutput) translationOutput.placeholder = t("translationPlaceholder");
+
+  const footerHintEl = document.getElementById("footer-hint");
+  if (footerHintEl) footerHintEl.textContent = t("footerHint");
+
+  const donateBtnEl = document.getElementById("donate-btn");
+  if (donateBtnEl) donateBtnEl.textContent = t("donateBtn");
+
+  // Actualiza la opcion "auto" del selector de idioma origen
+  if (sourceSelect) {
+    const autoOpt = sourceSelect.querySelector('option[value="auto"]');
+    if (autoOpt) autoOpt.textContent = t("autoDetect");
+  }
+
+  // Refresca la nota del backend con el idioma actual
+  updateBackendNote(currentTranscriptionBackend());
+
+  // Refresca el estado "Inactivo" si la app esta en reposo
+  if (statusBox && statusBox.classList.contains("idle")) {
+    setStatus("idle", t("statusIdle"));
+  }
+}
+
+// Arrays de idiomas con opcion "auto" para origen
+const SOURCE_LANGUAGES = [{ name: "autoDetect", code: "auto" }, ...COMMON_LANGUAGES];
 const TARGET_LANGUAGES = [...COMMON_LANGUAGES];
 
+// Referencias al DOM
 const sourceSelect = document.getElementById("source-language");
 const targetSelect = document.getElementById("target-language");
 const transcriptionBackendSelect = document.getElementById("transcription-backend");
@@ -53,6 +424,7 @@ const TRANSCRIPT_TRANSLATION_DEBOUNCE_MS = 260;
 const SpeechRecognitionCtor =
   window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
+// Estado global de la app
 let listening = false;
 let mediaStream = null;
 let audioContext = null;
@@ -80,15 +452,24 @@ let translationSyncTimer = null;
 let activeTranscriptTranslationController = null;
 let lastRequestedTranscript = "";
 
+// Inicializacion al cargar la pagina
 buildLanguageOptions();
 wireEvents();
+wireUiLanguageSelect();
 initializeBackendControl();
+applyUiLanguage();
 void refreshBackendFromServer();
 
+// Construye las listas de idiomas origen y destino en los selectores del DOM
 function buildLanguageOptions() {
   if (sourceSelect) {
     sourceSelect.innerHTML = "";
-    SOURCE_LANGUAGES.forEach((language) => {
+    // Opcion de deteccion automatica (texto actualizado por i18n)
+    const autoOpt = document.createElement("option");
+    autoOpt.value = "auto";
+    autoOpt.textContent = t("autoDetect");
+    sourceSelect.appendChild(autoOpt);
+    COMMON_LANGUAGES.forEach((language) => {
       const option = document.createElement("option");
       option.value = language.code;
       option.textContent = formatLanguage(language);
@@ -109,6 +490,7 @@ function buildLanguageOptions() {
   }
 }
 
+// Enlaza todos los eventos de la UI con sus manejadores
 function wireEvents() {
   startBtn.addEventListener("click", startListening);
   stopBtn.addEventListener("click", stopListening);
@@ -128,7 +510,7 @@ function wireEvents() {
       copyTextareaContent(
         transcriptOutput,
         copyTranscriptBtn,
-        "No hay transcripcion para copiar."
+        t("errCopyEmptyTranscript")
       );
     });
   }
@@ -137,7 +519,7 @@ function wireEvents() {
       copyTextareaContent(
         translationOutput,
         copyTranslationBtn,
-        "No hay traduccion para copiar."
+        t("errCopyEmptyTranslation")
       );
     });
   }
@@ -147,6 +529,19 @@ function wireEvents() {
       updateBackendNote(currentTranscriptionBackend());
     });
   }
+}
+
+// Enlaza el selector de idioma de la interfaz con localStorage y applyUiLanguage
+function wireUiLanguageSelect() {
+  const uiLangSelect = document.getElementById("ui-language");
+  if (!uiLangSelect) return;
+  // Restaura la preferencia guardada
+  uiLangSelect.value = currentUiLang;
+  uiLangSelect.addEventListener("change", () => {
+    currentUiLang = uiLangSelect.value;
+    localStorage.setItem("albert_ui_lang", currentUiLang);
+    applyUiLanguage();
+  });
 }
 
 function formatLanguage(language) {
@@ -227,10 +622,11 @@ async function refreshBackendFromServer() {
     }
     updateBackendNote(currentTranscriptionBackend());
   } catch (_error) {
-    // ignorado
+    // ignorado - el servidor puede no estar disponible aun
   }
 }
 
+// Actualiza la nota informativa del backend usando las cadenas i18n actuales
 function updateBackendNote(backend) {
   if (!backendNote) {
     return;
@@ -238,16 +634,14 @@ function updateBackendNote(backend) {
 
   if (backend === "google") {
     if (SpeechRecognitionCtor) {
-      backendNote.textContent =
-        "Usando Google Speech en vivo desde el navegador (transcripcion casi en tiempo real). Para mayor precision, fija el idioma origen en lugar de auto.";
+      backendNote.textContent = t("backendNoteGoogleLive");
       return;
     }
-    backendNote.textContent =
-      "Usando Google Speech por bloques (tu navegador no soporta modo en vivo).";
+    backendNote.textContent = t("backendNoteGoogleChunk");
     return;
   }
 
-  backendNote.textContent = "Usando faster_whisper local (recomendado para uso sin conexion).";
+  backendNote.textContent = t("backendNoteWhisper");
 }
 
 function setStatus(state, text) {
@@ -281,7 +675,7 @@ function swapLanguages() {
   const target = currentTargetLanguage();
 
   if (source.code === "auto") {
-    showError("No se puede intercambiar cuando el idioma origen es automatico.");
+    showError(t("errSwapAuto"));
     return;
   }
 
@@ -303,16 +697,14 @@ async function startListening() {
 
   const serverReady = await checkServerReady();
   if (!serverReady) {
-    showError(
-      "No hay conexion con el servidor local. Abre AlbertTranslator e inicia el servidor. Si falla, revisa alberttranslator.log junto al .exe."
-    );
+    showError(t("errNoServer"));
     return;
   }
 
   const source = currentSourceLanguage();
   const target = currentTargetLanguage();
   if (!target || target.code === "auto") {
-    showError("Selecciona un idioma destino valido.");
+    showError(t("errNoTarget"));
     return;
   }
 
@@ -326,7 +718,7 @@ async function startListening() {
   listening = true;
   startBtn.disabled = true;
   stopBtn.disabled = false;
-  setStatus("processing", "Iniciando escucha...");
+  setStatus("processing", t("statusStarting"));
 
   uploadQueue = [];
   processingQueue = false;
@@ -342,17 +734,17 @@ async function startListening() {
     if (shouldUseBrowserSpeechRecognition()) {
       await ensureMicrophonePermissionForLive();
       startBrowserSpeechRecognition(source.code);
-      setStatus("listening", "Escuchando (Google en vivo)");
+      setStatus("listening", t("statusListeningLive"));
       return;
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("Tu navegador no permite capturar microfono.");
+      throw new Error(t("errNoMic"));
     }
 
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) {
-      throw new Error("Tu navegador no soporta AudioContext para captura de voz.");
+      throw new Error(t("errNoAudioCtx"));
     }
 
     await initializeAudioPipeline(AudioContextCtor);
@@ -360,30 +752,28 @@ async function startListening() {
       flushCapturedAudio(false);
     }, TIMER_FLUSH_MS);
 
-    setStatus("listening", "Escuchando");
+    setStatus("listening", t("statusListening"));
   } catch (error) {
     listening = false;
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    setStatus("idle", "Inactivo");
+    setStatus("idle", t("statusIdle"));
     stopBrowserSpeechRecognition();
     await teardownAudioPipeline();
-    showError(error.message || "No se pudo iniciar la captura de audio.");
+    showError(error.message || t("errNoMic"));
   }
 }
 
 async function ensureMicrophonePermissionForLive() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Tu navegador no permite capturar microfono.");
+    throw new Error(t("errNoMic"));
   }
 
   let probeStream = null;
   try {
     probeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (error) {
-    throw new Error(
-      `No se pudo acceder al microfono para transcripcion en vivo. Detalle: ${error.message || error}`
-    );
+    throw new Error(t("errMicLivePrefix") + (error.message || error));
   } finally {
     if (probeStream) {
       probeStream.getTracks().forEach((track) => track.stop());
@@ -399,14 +789,14 @@ async function stopListening() {
   listening = false;
   startBtn.disabled = false;
   stopBtn.disabled = true;
-  setStatus("processing", "Deteniendo...");
+  setStatus("processing", t("statusStopping"));
 
   if (usingBrowserSpeechRecognition) {
     stopBrowserSpeechRecognition();
     if (isTranscriptTranslationPending()) {
-      setStatus("processing", "Procesando traducciones finales");
+      setStatus("processing", t("statusFinalBrowser"));
     } else {
-      setStatus("idle", "Inactivo");
+      setStatus("idle", t("statusIdle"));
     }
     return;
   }
@@ -420,9 +810,9 @@ async function stopListening() {
   await teardownAudioPipeline();
 
   if (processingQueue || uploadQueue.length > 0) {
-    setStatus("processing", "Procesando bloques finales");
+    setStatus("processing", t("statusFinalQueue"));
   } else {
-    setStatus("idle", "Inactivo");
+    setStatus("idle", t("statusIdle"));
   }
 }
 
@@ -432,9 +822,7 @@ function shouldUseBrowserSpeechRecognition() {
 
 function startBrowserSpeechRecognition(sourceLanguageCode) {
   if (!SpeechRecognitionCtor) {
-    throw new Error(
-      "Tu navegador no soporta transcripcion en vivo. Cambia a faster_whisper o usa Chrome/Edge."
-    );
+    throw new Error(t("errNoLiveSpeech"));
   }
 
   if (browserSpeechRestartTimer) {
@@ -465,9 +853,7 @@ function startBrowserSpeechRecognition(sourceLanguageCode) {
   } catch (error) {
     usingBrowserSpeechRecognition = false;
     browserSpeechRecognition = null;
-    throw new Error(
-      `No se pudo iniciar la transcripcion en vivo de Google. Detalle: ${error.message || error}`
-    );
+    throw new Error(t("errStartLiveDetail") + (error.message || error));
   }
 }
 
@@ -554,6 +940,7 @@ function handleBrowserSpeechEnd() {
     clearTimeout(browserSpeechRestartTimer);
   }
 
+  // Reinicia el reconocimiento automaticamente tras un breve retardo
   browserSpeechRestartTimer = setTimeout(() => {
     if (!listening || !usingBrowserSpeechRecognition || !browserSpeechRecognition) {
       return;
@@ -562,7 +949,7 @@ function handleBrowserSpeechEnd() {
     try {
       browserSpeechRecognition.start();
     } catch (_error) {
-      // Si ya esta arrancando/reiniciando, dejamos que el siguiente onend reintente.
+      // Si ya esta arrancando/reiniciando, el siguiente onend reintentara
     }
   }, BROWSER_STT_RESTART_DELAY_MS);
 }
@@ -623,17 +1010,18 @@ function bestBrowserLanguageHint() {
   return "es";
 }
 
+// Mapea codigos de error de SpeechRecognition a mensajes i18n
 function mapSpeechRecognitionError(code) {
   if (code === "not-allowed" || code === "service-not-allowed") {
-    return "Permiso de microfono bloqueado para transcripcion en vivo.";
+    return t("errSpeechNotAllowed");
   }
   if (code === "audio-capture") {
-    return "No se detecto microfono para transcripcion en vivo.";
+    return t("errSpeechNoMic");
   }
   if (code === "network") {
-    return "Error de red en Google Speech. Verifica tu conexion.";
+    return t("errSpeechNetwork");
   }
-  return `Error en transcripcion en vivo (${code}).`;
+  return `${t("errSpeechGeneric")} (${code}).`;
 }
 
 function setTranscriptInterimPreview(text) {
@@ -729,7 +1117,7 @@ async function syncTranslationFromTranscriptOutput() {
 
   setStatus(
     "processing",
-    listening ? "Escuchando + traduciendo en vivo" : "Procesando traducciones"
+    listening ? t("statusTranslatingLive") : t("statusTranslating")
   );
 
   let response;
@@ -750,7 +1138,7 @@ async function syncTranslationFromTranscriptOutput() {
       return;
     }
     throw new Error(
-      `No se pudo conectar con el servidor local (${API_BASE}) para traducir en vivo.`
+      `${t("errNoConnect")} (${API_BASE}).`
     );
   }
 
@@ -769,7 +1157,7 @@ async function syncTranslationFromTranscriptOutput() {
     showError("");
   } catch (error) {
     if (error?.name !== "AbortError") {
-      showError(error.message || "No se pudo traducir el texto en vivo.");
+      showError(error.message || t("errNoConnect"));
     }
   } finally {
     if (activeTranscriptTranslationController === controller) {
@@ -779,10 +1167,10 @@ async function syncTranslationFromTranscriptOutput() {
     if (listening) {
       setStatus(
         "listening",
-        usingBrowserSpeechRecognition ? "Escuchando (Google en vivo)" : "Escuchando"
+        usingBrowserSpeechRecognition ? t("statusListeningLive") : t("statusListening")
       );
     } else {
-      setStatus("idle", "Inactivo");
+      setStatus("idle", t("statusIdle"));
     }
   }
 }
@@ -806,7 +1194,7 @@ async function initializeAudioPipeline(AudioContextCtor) {
   sourceNode = audioContext.createMediaStreamSource(mediaStream);
 
   if (typeof audioContext.createScriptProcessor !== "function") {
-    throw new Error("Este navegador no soporta ScriptProcessor para capturar audio.");
+    throw new Error(t("errNoScriptProc"));
   }
 
   processorNode = audioContext.createScriptProcessor(2048, 1, 1);
@@ -930,13 +1318,12 @@ function enqueueAudioChunk(blob) {
     return;
   }
 
+  // Descarta el bloque mas antiguo si la cola esta llena para evitar desfase
   if (uploadQueue.length >= MAX_QUEUE_CHUNKS) {
     uploadQueue.shift();
     if (!queueDropWarned) {
       queueDropWarned = true;
-      showError(
-        "La captura va mas rapido que el procesamiento. Se descartaron bloques antiguos para mantener estabilidad."
-      );
+      showError(t("errQueueDrop"));
     }
   }
 
@@ -950,7 +1337,7 @@ async function processQueue() {
   }
 
   processingQueue = true;
-  setStatus("processing", listening ? "Escuchando + procesando" : "Procesando bloques finales");
+  setStatus("processing", listening ? t("statusListeningProcessing") : t("statusFinalQueue"));
 
   const chunk = uploadQueue.shift();
 
@@ -959,15 +1346,15 @@ async function processQueue() {
     queueDropWarned = false;
     showError("");
   } catch (error) {
-    showError(error.message || "No se pudo procesar el audio.");
+    showError(error.message || t("errNoConnect"));
   } finally {
     processingQueue = false;
     if (uploadQueue.length > 0) {
       processQueue();
     } else if (listening) {
-      setStatus("listening", "Escuchando");
+      setStatus("listening", t("statusListening"));
     } else {
-      setStatus("idle", "Inactivo");
+      setStatus("idle", t("statusIdle"));
     }
   }
 }
@@ -998,7 +1385,7 @@ async function sendChunk(chunk) {
     });
   } catch (_error) {
     throw new Error(
-      `No se pudo conectar con el servidor local (${API_BASE}). Verifica que AlbertTranslator este abierto. Revisa alberttranslator.log junto al .exe.`
+      `${t("errNoConnect")} (${API_BASE}). ${t("errServerDetail")}`
     );
   }
 
@@ -1035,6 +1422,7 @@ function mergeFloat32Buffers(buffers) {
   return merged;
 }
 
+// Reduce la tasa de muestreo del audio para ajustarlo a TARGET_SAMPLE_RATE
 function downsampleFloat32(buffer, inputRate, outputRate) {
   if (!buffer || buffer.length === 0) {
     return new Float32Array(0);
@@ -1068,6 +1456,7 @@ function downsampleFloat32(buffer, inputRate, outputRate) {
   return result;
 }
 
+// Codifica muestras Float32 como un blob WAV PCM 16-bit mono
 function encodeWavBlob(samples, sampleRate) {
   const bytesPerSample = 2;
   const blockAlign = bytesPerSample;
@@ -1105,6 +1494,7 @@ function writeWavString(view, offset, text) {
   }
 }
 
+// Calcula RMS (nivel de volumen) de un frame de audio para deteccion de voz
 function calculateRms(buffer) {
   if (!buffer || buffer.length === 0) {
     return 0;
@@ -1140,6 +1530,7 @@ function resetTranslationTypewriter() {
   translationTypeTarget = String(translationOutput?.value || "");
 }
 
+// Anima la aparicion de la traduccion caracter a caracter (efecto maquina de escribir)
 function animateTranslationTo(targetText) {
   translationTypeTarget = String(targetText || "");
 
@@ -1211,7 +1602,7 @@ async function parseJsonResponse(response) {
   try {
     return JSON.parse(text);
   } catch (_error) {
-    return { error: "La respuesta del servidor no es JSON valido." };
+    return { error: t("errJsonInvalid") };
   }
 }
 
@@ -1236,7 +1627,7 @@ async function copyTextareaContent(textarea, button, emptyMessage) {
     flashCopiedButton(button);
     showError("");
   } catch (_error) {
-    showError("No se pudo copiar al portapapeles.");
+    showError(t("errCopyFailed"));
   }
 }
 
@@ -1246,6 +1637,7 @@ async function writeToClipboard(text) {
     return;
   }
 
+  // Fallback para contextos no seguros (HTTP local)
   const helper = document.createElement("textarea");
   helper.value = text;
   helper.setAttribute("readonly", "");
@@ -1260,12 +1652,13 @@ async function writeToClipboard(text) {
   }
 }
 
+// Muestra confirmacion visual en el boton Copiar y restaura el texto original
 function flashCopiedButton(button) {
   if (!button) {
     return;
   }
   const original = button.textContent;
-  button.textContent = "Copiado";
+  button.textContent = t("copiedBtn");
   button.classList.add("copied");
   setTimeout(() => {
     button.textContent = original;

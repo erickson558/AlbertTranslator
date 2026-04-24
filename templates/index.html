@@ -9,28 +9,42 @@
 <body>
   <main class="app-shell">
     <header class="app-header">
-      <h1>Traductor de Voz en Vivo</h1>
-      <p>Transcripcion por voz del navegador y traduccion automatica con idioma origen y destino.</p>
+      <!-- ui-lang-bar: selector del idioma de la interfaz, alineado a la derecha -->
+      <div class="ui-lang-bar">
+        <label id="label-ui-lang" for="ui-language">Idioma de la interfaz</label>
+        <select id="ui-language">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="pt">Português</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+      <!-- Titulo y subtitulo actualizados por i18n -->
+      <h1 id="page-title">Traductor de Voz en Vivo</h1>
+      <p id="page-subtitle">Transcripcion por voz del navegador y traduccion automatica con idioma origen y destino.</p>
       <small>Version {{ app_version }}</small>
     </header>
 
     <section class="language-bar">
       <div class="lang-field">
-        <label for="source-language">Idioma origen</label>
+        <!-- id en el label para poder actualizarlo por i18n -->
+        <label id="label-source-lang" for="source-language">Idioma origen</label>
         <select id="source-language"></select>
       </div>
 
-      <button id="swap-languages" type="button" class="swap-btn" title="Intercambiar idiomas">Intercambiar</button>
+      <button id="swap-languages" type="button" class="swap-btn" title="Intercambiar idiomas">⇄ Intercambiar</button>
 
       <div class="lang-field">
-        <label for="target-language">Idioma destino</label>
+        <label id="label-target-lang" for="target-language">Idioma destino</label>
         <select id="target-language"></select>
       </div>
     </section>
 
     <section class="backend-bar">
       <div class="backend-field">
-        <label for="transcription-backend">Backend de transcripcion</label>
+        <!-- id en el label para i18n -->
+        <label id="label-backend" for="transcription-backend">Backend de transcripcion</label>
         <select id="transcription-backend">
           <option value="google">google (nube)</option>
           <option value="faster_whisper">faster_whisper (local)</option>
@@ -51,7 +65,8 @@
     <section class="panes">
       <article class="pane">
         <div class="pane-head">
-          <h2>Transcripcion</h2>
+          <!-- id en h2 para i18n -->
+          <h2 id="transcript-title">Transcripcion</h2>
           <button id="copy-transcript" type="button" class="copy-btn">Copiar</button>
         </div>
         <textarea id="transcript-output" readonly placeholder="La transcripcion aparecera aqui..."></textarea>
@@ -59,7 +74,7 @@
 
       <article class="pane">
         <div class="pane-head">
-          <h2>Traduccion</h2>
+          <h2 id="translation-title">Traduccion</h2>
           <button id="copy-translation" type="button" class="copy-btn">Copiar</button>
         </div>
         <textarea id="translation-output" readonly placeholder="La traduccion aparecera aqui..."></textarea>
@@ -69,7 +84,16 @@
     <p id="error-box" class="error-box" hidden></p>
 
     <footer class="app-footer">
-      <small>Permite el microfono para capturar audio y enviarlo al servidor local para transcripcion.</small>
+      <!-- id en small para i18n -->
+      <small id="footer-hint">Permite el microfono para capturar audio y enviarlo al servidor local para transcripcion.</small>
+      <!-- Boton de donacion "Comprame una cerveza" via PayPal -->
+      <div class="donate-wrap">
+        <a id="donate-btn"
+           href="https://www.paypal.com/donate/?hosted_button_id=ZABFRXC2P3JQN"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="donate-btn">🍺 Comprame una cerveza</a>
+      </div>
     </footer>
   </main>
 

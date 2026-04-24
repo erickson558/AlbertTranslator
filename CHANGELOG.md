@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [V1.5.0] - 2026-04-23
+
+### Added
+
+- Boton de donacion "Comprame una cerveza" con enlace PayPal en el footer de la UI web.
+- Soporte multi-idiomas en la interfaz web (ES, EN, PT, FR, DE) con selector persistente via localStorage.
+
+### Fixed
+
+- `is_valid_language_code()` ahora acepta codigos con guion (ej. `zh-cn`, `zh-tw`); antes `isalpha()` los rechazaba.
+- `api.py`: endpoints `/api/transcribe-translate` y `/api/translate-text` usan `is_valid_language_code()` en lugar de `isalpha()` para validar codigos de idioma.
+- `speech_service.py`: inicializacion de `langdetect` ahora usa `double-checked locking` para evitar condicion de carrera en entornos multi-hilo.
+- `server.py`: la propiedad `running` ahora verifica tambien que el hilo del servidor este vivo, detectando cierres inesperados.
+- `gui.py`: el estado de los botones del panel de escritorio se refresca automaticamente cada 2 segundos para reflejar caidas inesperadas del servidor.
+
 ## [V1.4.2] - 2026-03-28
 
 ### Changed

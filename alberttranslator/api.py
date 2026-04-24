@@ -129,16 +129,14 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
             request.form.get("transcription_backend") or ""
         ).strip().lower()
 
-        if source_language != "auto" and not source_language.isalpha():
+        # Valida codigos de idioma; is_valid_language_code acepta "en", "zh-cn", etc.
+        if source_language != "auto" and not is_valid_language_code(source_language):
             LOGGER.warning("Idioma origen invalido recibido: %s", source_language)
             return jsonify({"error": "Codigo de idioma origen invalido."}), 400
 
-        if not target_language.isalpha():
+        if not is_valid_language_code(target_language) or target_language == "auto":
             LOGGER.warning("Idioma destino invalido recibido: %s", target_language)
-            return jsonify({"error": "Codigo de idioma destino invalido."}), 400
-        if target_language == "auto":
-            LOGGER.warning("Idioma destino 'auto' no permitido.")
-            return jsonify({"error": "El idioma destino no puede ser automatico."}), 400
+            return jsonify({"error": "Codigo de idioma destino invalido o automatico."}), 400
 
         transcription_backend_override = ""
         if requested_transcription_backend:
@@ -235,13 +233,14 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
         target_language = str(payload.get("target_language", "en")).strip().lower()
         detected_language = str(payload.get("detected_language", "")).strip().lower()
 
-        if source_language != "auto" and not source_language.isalpha():
+        # Valida codigos de idioma; is_valid_language_code acepta "en", "zh-cn", etc.
+        if source_language != "auto" and not is_valid_language_code(source_language):
             LOGGER.warning("Idioma origen invalido en /api/translate-text: %s", source_language)
             return jsonify({"error": "Codigo de idioma origen invalido."}), 400
 
-        if not target_language.isalpha() or target_language == "auto":
+        if not is_valid_language_code(target_language) or target_language == "auto":
             LOGGER.warning("Idioma destino invalido en /api/translate-text: %s", target_language)
-            return jsonify({"error": "Codigo de idioma destino invalido."}), 400
+            return jsonify({"error": "Codigo de idioma destino invalido o automatico."}), 400
 
         if not transcript_text:
             return jsonify({"transcript": "", "translation": "", "detected_language": "auto"})

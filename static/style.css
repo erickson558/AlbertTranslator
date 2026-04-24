@@ -217,9 +217,57 @@ textarea {
   border: 1px solid #f0b9c2;
 }
 
+/* Barra de idioma de la interfaz (esquina superior derecha del header) */
+.ui-lang-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: flex-end;
+  margin-bottom: 0.4rem;
+}
+
+.ui-lang-bar label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ui-lang-bar select {
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
 .app-footer {
   margin-top: 0.9rem;
   color: var(--muted);
+}
+
+/* Contenedor del boton de donacion */
+.donate-wrap {
+  margin-top: 0.55rem;
+  text-align: center;
+}
+
+/* Boton "Comprame una cerveza" - enlace externo estilizado como boton ambar */
+.donate-btn {
+  display: inline-block;
+  padding: 0.45rem 1.1rem;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.donate-btn:hover {
+  background: #d97706;
 }
 
 @media (max-width: 860px) {
