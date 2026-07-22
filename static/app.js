@@ -1,3 +1,23 @@
+// ============================================================================
+// AlbertTranslator - frontend de la UI web (sin frameworks, JS plano)
+// ----------------------------------------------------------------------------
+// Estructura de este archivo, de arriba a abajo:
+//   1) Datos: catalogo de idiomas + diccionario i18n (UI_TRANSLATIONS) + helpers t()/applyUiLanguage().
+//   2) Inicializacion: referencias al DOM, wireEvents(), construccion de selects.
+//   3) Flujo de "transcripcion en vivo" via Web Speech API del navegador
+//      (startBrowserSpeechRecognition / handleBrowserSpeechResult), usado cuando
+//      el backend es "google" y el navegador soporta SpeechRecognition.
+//   4) Flujo de "captura por bloques": graba audio con AudioContext/ScriptProcessor,
+//      lo convierte a WAV 16kHz y lo sube a /api/transcribe-translate (usado con
+//      backend faster_whisper, o como fallback si no hay SpeechRecognition nativo).
+//   5) Traduccion: /api/translate-text sincroniza la traduccion con el contenido
+//      actual del cuadro de transcripcion, con efecto "maquina de escribir".
+//   6) Utilidades varias: WAV encoding, copiar al portapapeles, deteccion de idioma
+//      del navegador, etc.
+// Toda cadena visible en la interfaz sale de UI_TRANSLATIONS a traves de t(key);
+// no hay texto de UI hardcodeado fuera de ese diccionario.
+// ============================================================================
+
 // Lista de idiomas disponibles para transcripcion/traduccion
 const COMMON_LANGUAGES = [
   { name: "Espanol", code: "es" },

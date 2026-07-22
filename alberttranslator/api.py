@@ -1,3 +1,9 @@
+"""Fabrica de la aplicacion Flask: sirve la UI web y expone la API HTTP de transcripcion/traduccion.
+
+`create_app()` es el unico punto de construccion de la app, usado tanto por
+`server.py` (GUI/CLI) como por CI (smoke test) y por cualquier WSGI runner externo.
+"""
+
 from __future__ import annotations
 
 import os
@@ -28,6 +34,12 @@ from .speech_service import (
 
 
 def create_app(settings: Dict[str, str] | None = None) -> Flask:
+    """Construye la app Flask con todas las rutas registradas.
+
+    Si no se pasa `settings`, se cargan desde `.env`/entorno (uso normal). Si se
+    pasa un dict (uso desde la GUI, que ya valido los campos del formulario),
+    se vuelve a pasar por `coerce_settings` para garantizar consistencia.
+    """
     runtime_dir = get_runtime_dir()
 
     if settings is None:
@@ -45,16 +57,21 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
         static_folder=str(runtime_dir / "static"),
     )
     app.config["MAX_CONTENT_LENGTH"] = MAX_AUDIO_BYTES
+    # Reutiliza los handlers del root logger (configurados en logging_setup.py)
+    # para que los logs de Flask/Werkzeug caigan en el mismo archivo rotativo.
     root_logger = logging.getLogger()
     app.logger.handlers = root_logger.handlers
     app.logger.setLevel(root_logger.level)
     app.logger.propagate = True
 
     audio_chunk_ms = coerce_chunk_ms(settings["AUDIO_CHUNK_MS"])
+    # Una sola instancia del motor por app: mantiene cacheados el modelo Whisper
+    # (si aplica) y los traductores, evitando recrearlos en cada request.
     engine = OfflineSpeechEngine(settings)
 
     @app.get("/")
     def index():
+        """Sirve la pagina principal (SPA simple) con la config inicial embebida."""
         return render_template(
             "index.html",
             audio_chunk_ms=audio_chunk_ms,
@@ -66,6 +83,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.get("/api/health")
     def health():
+        """Chequeo de salud usado por el frontend para saber si el servidor local esta arriba."""
         return jsonify(
             {
                 "status": "ok",
@@ -78,6 +96,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.get("/api/model-status")
     def model_status():
+        """Estado detallado del modelo de transcripcion (usado para feedback de carga en la UI)."""
         status = engine.model_status()
         status["transcription_backend"] = engine.transcription_backend()
         status["translation_backend"] = engine.translation_backend()
@@ -85,6 +104,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.post("/api/preload-model")
     def preload_model():
+        """Fuerza la carga anticipada del modelo Whisper (evita el retraso en la primera transcripcion)."""
         warmed = False
         try:
             warmed = engine.start_model_warmup()
@@ -117,6 +137,12 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.post("/api/transcribe-translate")
     def transcribe_translate():
+        """Recibe un bloque de audio, lo transcribe y traduce en un solo paso.
+
+        Es el endpoint principal usado por el flujo de captura por bloques
+        (ver `flushCapturedAudio` en static/app.js) cuando el navegador no
+        soporta reconocimiento de voz nativo o se eligio backend `faster_whisper`.
+        """
         audio_file = request.files.get("audio")
         if audio_file is None:
             LOGGER.warning("Solicitud sin audio en /api/transcribe-translate.")
@@ -185,6 +211,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
             LOGGER.exception("Error inesperado durante transcripcion: %s", exc)
             return jsonify({"error": f"Fallo la transcripcion: {exc}"}), 502
         finally:
+            # El archivo temporal siempre se borra, exista o no error en la transcripcion.
             safe_delete_file(audio_path)
 
         if not transcript_text:
@@ -227,6 +254,12 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.post("/api/translate-text")
     def translate_text():
+        """Traduce texto ya transcrito por el navegador (reconocimiento de voz nativo).
+
+        Usado por el flujo de "transcripcion en vivo" (Web Speech API) descrito en
+        `syncTranslationFromTranscriptOutput` en static/app.js: el navegador ya
+        genero el texto, este endpoint solo necesita traducirlo.
+        """
         payload = request.get_json(silent=True) or {}
         transcript_text = str(payload.get("transcript", "")).strip()
         source_language = str(payload.get("source_language", "auto")).strip().lower()
@@ -288,6 +321,7 @@ def create_app(settings: Dict[str, str] | None = None) -> Flask:
 
     @app.post("/api/install-translation-pair")
     def install_translation_pair_api():
+        """Endpoint legado: la instalacion manual de pares Argos ya no aplica (se usa traduccion en linea)."""
         LOGGER.warning("Endpoint /api/install-translation-pair deshabilitado en este build.")
         return jsonify(
             {

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [V1.5.1] - 2026-07-22
+
+### Fixed
+
+- `server.py`: `ServerController.start()` ya no lanza un falso "El servidor ya esta en ejecucion" cuando el hilo del servidor muere de forma inesperada (crash). Ahora reutiliza el mismo criterio que `running` (servidor + hilo vivo) y limpia el estado obsoleto antes de reiniciar, permitiendo recuperarse sin cerrar la aplicacion.
+
+### Added
+
+- Flujo de trabajo Spec Driven Development (SDD) documentado en `specs/`.
+- Agentes de Claude Code recomendados para este proyecto (`.claude/agents/`): `qa-devops-engineer` y `code-doc-writer`.
+- Skills de Claude Code (`.claude/skills/`): `python-qa-release`, `github-publish`, `code-commentator` y `spec-driven-development`.
+
+### Changed
+
+- Se agregaron comentarios y docstrings explicativos en todos los modulos de `alberttranslator/`, en `app.py` y en `static/app.js` para documentar que hace cada parte del codigo.
+
 ## [V1.5.0] - 2026-04-23
 
 ### Added

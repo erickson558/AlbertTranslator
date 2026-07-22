@@ -1,3 +1,12 @@
+"""Shims e importes perezosos para dependencias pesadas u opcionales.
+
+Estos modulos (`faster_whisper`, `argostranslate`) son caros de importar (tardan
+o arrastran dependencias nativas como torch/onnxruntime) y no siempre estan
+instalados segun el backend elegido por el usuario. Se importan solo cuando
+realmente se necesitan (`ensure_*_import`), y se sustituyen dependencias
+transitivas problematicas en el build portable de Windows por stubs livianos.
+"""
+
 from __future__ import annotations
 
 import os
@@ -9,12 +18,17 @@ from .constants import DEFAULT_ARGOS_CHUNK_TYPE
 from .logging_setup import LOGGER
 
 
+# Cache de modulos ya importados; evitan reimportar/reinicializar en cada llamada.
 WhisperModel = None
 argos_package = None
 argos_translate = None
 
 
 def prepare_runtime_import_shims() -> None:
+    """Instala stubs en `sys.modules` para dependencias transitivas de Argos que
+    no se necesitan con la configuracion actual (ARGOS_CHUNK_TYPE=MINISBD) y que,
+    en el build portable de Windows, pueden fallar al cargar (stanza/torch pesados,
+    o la DLL nativa de onnxruntime que usa minisbd)."""
     # Argos importa stanza aunque usemos MiniSBD.
     # Creamos un stub liviano para evitar inicializar stanza/torch.
     if "stanza" not in sys.modules:
@@ -65,6 +79,8 @@ def prepare_runtime_import_shims() -> None:
                 pass
 
             def sentences(self, text: str):
+                # Segmentacion simple por puntuacion de cierre de oracion;
+                # suficiente para el uso que Argos hace de este resultado.
                 raw = str(text or "").strip()
                 if not raw:
                     return []
@@ -77,6 +93,7 @@ def prepare_runtime_import_shims() -> None:
 
 
 def ensure_whisper_import() -> None:
+    """Importa `faster_whisper` de forma perezosa (solo si el backend `faster_whisper` esta activo)."""
     global WhisperModel
     if WhisperModel is not None:
         return
@@ -95,6 +112,7 @@ def ensure_whisper_import() -> None:
 
 
 def ensure_argos_imports() -> None:
+    """Importa `argostranslate` de forma perezosa (traduccion 100% offline, no expuesta actualmente en la API)."""
     global argos_package, argos_translate
     if argos_package is not None and argos_translate is not None:
         return

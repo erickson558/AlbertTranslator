@@ -6,7 +6,7 @@
 
 Aplicacion local para capturar audio desde el navegador, transcribirlo y traducirlo en tiempo casi real con modo web y modo escritorio.
 
-Version actual: `V1.5.0`
+Version actual: `V1.5.1`
 
 ## Que hace el programa
 
@@ -20,6 +20,8 @@ Version actual: `V1.5.0`
 
 - UI web local servida por Flask.
 - Modo GUI con Tkinter y modo CLI para servidor local.
+- Interfaz web multi-idioma (Espanol, Ingles, Portugues, Frances, Aleman), con preferencia persistida en el navegador.
+- Boton de donacion "Comprame una cerveza" (PayPal) en el footer de la UI web.
 - Configuracion persistente mediante `.env`.
 - Health check HTTP con version visible en `/api/health`.
 - Versionado centralizado con archivo `VERSION`.
@@ -186,6 +188,9 @@ El workflow [release.yml](./.github/workflows/release.yml):
 
 ```text
 .
+|-- .claude/
+|   |-- agents/            # Agentes de Claude Code recomendados para este repo
+|   `-- skills/            # Skills de Claude Code (QA/release, GitHub, docs, SDD)
 |-- .github/
 |   |-- workflows/
 |   |   |-- ci.yml
@@ -200,6 +205,7 @@ El workflow [release.yml](./.github/workflows/release.yml):
 |   `-- speech_service.py
 |-- scripts/
 |   `-- version_sync.py
+|-- specs/                 # Spec Driven Development: spec del proyecto + specs por feature
 |-- static/
 |-- templates/
 |-- app.py
@@ -210,6 +216,24 @@ El workflow [release.yml](./.github/workflows/release.yml):
 |-- VERSION
 `-- LICENSE
 ```
+
+## Desarrollo asistido con Claude Code (SDD, agentes y skills)
+
+Este repositorio incluye herramientas de [Claude Code](https://claude.com/claude-code)
+para mantener consistencia entre sesiones de desarrollo:
+
+- **Spec Driven Development** en [`specs/`](./specs/): [`PROJECT_SPEC.md`](./specs/PROJECT_SPEC.md)
+  es la especificacion viva del proyecto (arquitectura, alcance, requisitos no
+  funcionales); [`specs/features/`](./specs/features/) documenta cada feature o
+  fix relevante siguiendo [`TEMPLATE_FEATURE_SPEC.md`](./specs/TEMPLATE_FEATURE_SPEC.md).
+- **Agentes** en [`.claude/agents/`](./.claude/agents/):
+  - `qa-devops-engineer`: debugging, estabilidad, versionado SemVer y releases.
+  - `code-doc-writer`: comentarios de codigo, specs SDD y documentacion (README/CHANGELOG).
+- **Skills** en [`.claude/skills/`](./.claude/skills/):
+  - `python-qa-release`: protocolo de analisis -> fix -> validacion -> version -> commit.
+  - `github-publish`: commit/tag/push al repositorio usando la cuenta autenticada de GitHub.
+  - `code-commentator`: pauta de como comentar codigo en este proyecto.
+  - `spec-driven-development`: como y cuando escribir una spec antes de implementar.
 
 ## Buenas practicas operativas
 
@@ -224,6 +248,7 @@ El workflow [release.yml](./.github/workflows/release.yml):
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
 - [CHANGELOG.md](./CHANGELOG.md)
+- [specs/PROJECT_SPEC.md](./specs/PROJECT_SPEC.md)
 
 ## Licencia
 

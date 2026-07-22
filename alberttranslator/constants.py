@@ -1,3 +1,8 @@
+"""Constantes y valores por defecto compartidos por toda la aplicacion.
+
+Centraliza aqui evita "numeros magicos" repetidos en api.py, gui.py, settings.py, etc.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,9 +24,13 @@ def _read_app_version() -> str:
     return version
 
 
+# Version de la app leida en tiempo de importacion; se expone en la UI y en /api/health.
 APP_VERSION = _read_app_version()
 
+# Limite de tamano para los bloques de audio subidos (evita solicitudes abusivas).
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
+
+# --- Valores por defecto de configuracion (usados por settings.py y gui.py) ---
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = "8765"
 DEFAULT_AUDIO_CHUNK_MS = "2200"
@@ -35,6 +44,8 @@ DEFAULT_TRANSLATION_BACKEND = "google"
 DEFAULT_LIBRETRANSLATE_URL = "http://127.0.0.1:5000"
 DEFAULT_LIBRETRANSLATE_TIMEOUT_SEC = "15"
 
+# Mapa base de configuracion: define las claves validas que acepta el .env
+# y sirve de plantilla para coerce_settings()/load_settings() en settings.py.
 DEFAULT_SETTINGS: Dict[str, str] = {
     "APP_HOST": DEFAULT_HOST,
     "APP_PORT": DEFAULT_PORT,
@@ -53,5 +64,6 @@ DEFAULT_SETTINGS: Dict[str, str] = {
     "LIBRETRANSLATE_TIMEOUT_SEC": DEFAULT_LIBRETRANSLATE_TIMEOUT_SEC,
 }
 
+# Nombres de los archivos de log escritos junto al ejecutable/proyecto.
 MAIN_LOG_FILE = "alberttranslator.log"
 FATAL_LOG_FILE = "alberttranslator_fatal.log"

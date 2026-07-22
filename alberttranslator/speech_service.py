@@ -1,4 +1,20 @@
-﻿from __future__ import annotations
+"""Motor de transcripcion (speech-to-text) y traduccion usado por la API Flask.
+
+Contiene:
+- `OfflineSpeechEngine`: fachada con estado (cachea el modelo Whisper cargado)
+  que expone transcripcion y traduccion con el backend configurado.
+- Funciones de transcripcion por backend (`transcribe_with_google`,
+  `transcribe_with_faster_whisper`) y de traduccion por backend
+  (`translate_with_google`, `translate_with_libretranslate`).
+- Utilidades de normalizacion de codigos de idioma entre los distintos
+  formatos que exige cada backend (ISO simple, regional tipo BCP-47, etc.).
+
+El nombre "Offline" es historico: el proyecto empezo con backends 100% locales
+(Whisper + Argos Translate) y hoy tambien soporta backends en la nube
+(Google Speech/Translate, LibreTranslate) seleccionables por el usuario.
+"""
+
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -18,6 +34,7 @@ import alberttranslator.runtime_dependencies as runtime_dependencies
 _LANGDETECT_FACTORY_SEEDED = False
 # Protege la inicializacion del seed de langdetect contra condiciones de carrera en Flask multi-hilo
 _LANGDETECT_SEED_LOCK = Lock()
+# Cachea instancias de GoogleTranslator por par (origen, destino) para no recrearlas en cada bloque.
 _GOOGLE_TRANSLATOR_CACHE: dict[tuple[str, str], object] = {}
 _GOOGLE_TRANSLATOR_CACHE_LOCK = Lock()
 
@@ -27,10 +44,17 @@ class TranslationPairError(RuntimeError):
 
 
 class OfflineSpeechEngine:
+    """Fachada de transcripcion + traduccion; una instancia por app Flask (ver `create_app`).
+
+    Mantiene en memoria el modelo Whisper ya cargado (costoso de inicializar)
+    para reutilizarlo entre requests en vez de recargarlo en cada bloque de audio.
+    """
+
     def __init__(self, settings: Dict[str, str]) -> None:
         self.settings = settings
         self._whisper_model = None
         self._whisper_model_source = ""
+        # Evita que dos requests concurrentes disparen la carga del modelo dos veces.
         self._whisper_model_lock = Lock()
         self._whisper_error = ""
 
@@ -56,6 +80,11 @@ class OfflineSpeechEngine:
         language_hint: str = "",
         transcription_backend_override: str | None = None,
     ) -> tuple[str, str]:
+        """Transcribe un archivo de audio con el backend activo (o el override recibido en la request).
+
+        Devuelve `(texto_transcrito, idioma_detectado)`. El idioma detectado se
+        usa luego como idioma origen real cuando el usuario eligio "auto".
+        """
         backend = normalize_transcription_backend(
             transcription_backend_override or self.transcription_backend()
         )
@@ -104,6 +133,11 @@ class OfflineSpeechEngine:
         detected_language: str,
         target_language: str,
     ) -> str:
+        """Traduce un texto ya transcrito usando el backend de traduccion configurado.
+
+        Si el idioma origen resuelto coincide con el destino, se devuelve el
+        texto sin cambios (evita una llamada de red innecesaria).
+        """
         backend = self.translation_backend()
         source_for_translation = detected_language if source_language == "auto" else source_language
         source_for_translation = (source_for_translation or "").strip().lower()
@@ -143,14 +177,20 @@ class OfflineSpeechEngine:
         return translated
 
     def translation_backend(self) -> str:
+        """Backend de traduccion normalizado segun los settings actuales."""
         return normalize_translation_backend(self.settings.get("TRANSLATION_BACKEND", "google"))
 
     def transcription_backend(self) -> str:
+        """Backend de transcripcion normalizado segun los settings actuales."""
         return normalize_transcription_backend(
             self.settings.get("TRANSCRIPTION_BACKEND", "google")
         )
 
     def model_status(self) -> Dict[str, str | bool]:
+        """Estado del modelo de transcripcion para `/api/health` y `/api/model-status`.
+
+        Con backend `google` siempre reporta "ready" (no hay modelo local que cargar).
+        """
         if self.transcription_backend() == "google":
             return {
                 "state": "ready",
@@ -172,12 +212,20 @@ class OfflineSpeechEngine:
         }
 
     def start_model_warmup(self) -> bool:
+        """Dispara la carga del modelo Whisper por adelantado (llamado desde `/api/preload-model`)."""
         if self.transcription_backend() != "faster_whisper":
             return False
         self._ensure_whisper_model()
         return True
 
     def _ensure_whisper_model(self):
+        """Carga (una sola vez) y cachea el modelo `faster-whisper` configurado.
+
+        Usa double-checked locking: la comprobacion rapida sin lock evita el
+        costo de adquirir el Lock en el camino comun (modelo ya cargado);
+        la comprobacion dentro del lock evita que dos hilos carguen el modelo
+        dos veces si llegan al mismo tiempo con el modelo aun no listo.
+        """
         if self._whisper_model is not None:
             return self._whisper_model
 
@@ -237,6 +285,7 @@ def transcribe_with_google(
     source_language: str,
     language_hint: str,
 ) -> str:
+    """Transcribe un archivo de audio usando el backend `google` (via `SpeechRecognition`)."""
     try:
         import speech_recognition as sr
     except Exception as exc:
@@ -256,6 +305,7 @@ def transcribe_with_google(
     try:
         text = recognizer.recognize_google(audio_data, language=stt_language)
     except sr.UnknownValueError:
+        # No se detecto habla en el bloque; no es un error, se devuelve vacio.
         return ""
     except sr.RequestError as exc:
         raise RuntimeError(
@@ -274,6 +324,7 @@ def transcribe_with_faster_whisper(
     language_hint: str,
     model,
 ) -> tuple[str, str]:
+    """Transcribe un archivo de audio usando un modelo `faster-whisper` ya cargado."""
     transcription_language = normalize_whisper_language_code(source_language)
     if not transcription_language and source_language != "auto":
         transcription_language = normalize_whisper_language_code(language_hint)
@@ -310,6 +361,7 @@ def transcribe_with_faster_whisper(
 
 
 def normalize_stt_language(source_language: str, language_hint: str) -> str:
+    """Convierte un codigo simple ("es") al formato regional que exige la API de Google Speech ("es-ES")."""
     aliases = {
         "ar": "ar-SA",
         "de": "de-DE",
@@ -344,6 +396,7 @@ def normalize_stt_language(source_language: str, language_hint: str) -> str:
 
 
 def normalize_language_hint(language_hint: str) -> str:
+    """Extrae y valida un codigo base de idioma (2-8 letras) desde el `language_hint` del navegador."""
     raw = str(language_hint or "").strip().lower()
     if not raw:
         return ""
@@ -357,6 +410,7 @@ def normalize_language_hint(language_hint: str) -> str:
 
 
 def guess_extension(mime_type: str | None) -> str:
+    """Deriva una extension de archivo a partir del mime type del blob de audio subido."""
     if not mime_type:
         return "wav"
 
@@ -375,12 +429,14 @@ def guess_extension(mime_type: str | None) -> str:
 
 
 def write_temp_audio(audio_bytes: bytes, extension: str) -> Path:
+    """Escribe el audio recibido a un archivo temporal (los motores de STT necesitan una ruta en disco)."""
     with tempfile.NamedTemporaryFile(suffix=f".{extension}", delete=False) as temp_file:
         temp_file.write(audio_bytes)
         return Path(temp_file.name)
 
 
 def safe_delete_file(path: Path | None) -> None:
+    """Borra un archivo temporal ignorando errores (no debe interrumpir la respuesta HTTP)."""
     if path is None:
         return
     try:
@@ -390,6 +446,7 @@ def safe_delete_file(path: Path | None) -> None:
 
 
 def detect_language_code(text: str) -> str | None:
+    """Detecta el idioma de un texto usando `langdetect`; devuelve `None` si no es concluyente."""
     sample = str(text or "").strip()
     if len(sample) < 3:
         return None
@@ -404,6 +461,7 @@ def detect_language_code(text: str) -> str | None:
     if not _LANGDETECT_FACTORY_SEEDED:
         with _LANGDETECT_SEED_LOCK:
             if not _LANGDETECT_FACTORY_SEEDED:
+                # Semilla fija: hace determinista la deteccion (langdetect es probabilistico).
                 DetectorFactory.seed = 0
                 _LANGDETECT_FACTORY_SEEDED = True
 
@@ -425,11 +483,13 @@ def detect_language_code(text: str) -> str | None:
 
 
 def normalize_transcription_backend(raw: str) -> str:
+    """Restringe el backend de transcripcion recibido a los valores soportados."""
     value = str(raw or "").strip().lower()
     return value if value in {"faster_whisper", "google"} else "google"
 
 
 def _cached_google_translator(source_code: str, target_code: str):
+    """Devuelve (creando si hace falta) el `GoogleTranslator` cacheado para este par de idiomas."""
     key = (source_code, target_code)
     with _GOOGLE_TRANSLATOR_CACHE_LOCK:
         translator = _GOOGLE_TRANSLATOR_CACHE.get(key)
@@ -444,6 +504,7 @@ def _cached_google_translator(source_code: str, target_code: str):
 
 
 def to_bool_like(value: str | bool | None) -> bool:
+    """Igual que `settings.to_bool`, duplicado aqui para no crear un ciclo de imports con `settings`."""
     if isinstance(value, bool):
         return value
     if value is None:
@@ -452,6 +513,7 @@ def to_bool_like(value: str | bool | None) -> bool:
 
 
 def normalize_whisper_language_code(raw: str) -> str:
+    """Convierte un codigo de idioma al formato simple (2-8 letras) que espera `faster-whisper`."""
     value = str(raw or "").strip().lower()
     if not value or value == "auto":
         return ""
@@ -472,6 +534,7 @@ def normalize_whisper_language_code(raw: str) -> str:
 
 
 def resolve_whisper_download_root() -> Path:
+    """Directorio donde `faster-whisper` descarga/busca modelos (junto al .exe o al proyecto)."""
     candidates = [
         get_external_dir() / "models" / "whisper",
         get_runtime_dir() / "models" / "whisper",
@@ -486,6 +549,7 @@ def resolve_whisper_download_root() -> Path:
 
 
 def resolve_whisper_model_source(model_name: str) -> Path:
+    """Resuelve la ruta local de un modelo Whisper si existe, o una ruta candidata para descargarlo."""
     local = find_local_whisper_model(model_name)
     if local is not None:
         return local
@@ -500,6 +564,7 @@ def resolve_whisper_model_source(model_name: str) -> Path:
 
 
 def find_local_whisper_model(model_name: str) -> Path | None:
+    """Busca un modelo Whisper ya descargado en las ubicaciones de cache conocidas."""
     normalized = str(model_name or "").strip().lower() or "base"
     candidates = []
     seen = set()
@@ -528,6 +593,7 @@ def find_local_whisper_model(model_name: str) -> Path | None:
 
 
 def find_latest_snapshot_with_model(repo_dir: Path) -> Path | None:
+    """Encuentra el snapshot mas reciente de un repo de HuggingFace Hub que contenga `model.bin`."""
     if not repo_dir.exists():
         return None
     if (repo_dir / "model.bin").exists():
@@ -551,6 +617,7 @@ def translate_with_google(
     source_language: str,
     target_language: str,
 ) -> str:
+    """Traduce texto usando Google Translate (via `deep-translator`, sin API key)."""
     try:
         from deep_translator import GoogleTranslator
     except Exception as exc:
@@ -577,6 +644,7 @@ def translate_with_libretranslate(
     target_language: str,
     settings: Dict[str, str],
 ) -> str:
+    """Traduce texto llamando a una instancia de LibreTranslate (autoalojada o remota) por HTTP."""
     base_url = str(settings.get("LIBRETRANSLATE_URL", "http://127.0.0.1:5000")).strip().rstrip("/")
     if not base_url:
         base_url = "http://127.0.0.1:5000"
@@ -649,6 +717,7 @@ def translate_with_backend(
     target_language: str,
     settings: Dict[str, str],
 ) -> str:
+    """Despacha la traduccion al backend configurado (`google` o `libretranslate`)."""
     backend = normalize_translation_backend(settings.get("TRANSLATION_BACKEND", "google"))
     if backend == "libretranslate":
         return translate_with_libretranslate(
@@ -665,11 +734,13 @@ def translate_with_backend(
 
 
 def normalize_translation_backend(raw: str) -> str:
+    """Restringe el backend de traduccion recibido a los valores soportados."""
     value = str(raw or "").strip().lower()
     return value if value in {"google", "libretranslate"} else "google"
 
 
 def parse_timeout_seconds(raw: str) -> float:
+    """Parsea un timeout en segundos desde texto; ante valor invalido/negativo cae a 15s."""
     try:
         value = float(str(raw).strip())
     except Exception:
@@ -678,6 +749,7 @@ def parse_timeout_seconds(raw: str) -> float:
 
 
 def extract_libretranslate_error(raw: str) -> str:
+    """Extrae un mensaje de error legible de una respuesta HTTP de LibreTranslate (JSON o texto plano)."""
     body = str(raw or "").strip()
     if not body:
         return "Sin detalle de error."
@@ -695,6 +767,7 @@ def extract_libretranslate_error(raw: str) -> str:
 
 
 def normalize_google_language_code(code: str, allow_auto: bool) -> str:
+    """Adapta un codigo de idioma al dialecto exacto que espera Google Translate (p. ej. `zh` -> `zh-cn`)."""
     value = str(code or "").strip().lower()
     if allow_auto and (not value or value == "auto"):
         return "auto"
@@ -712,6 +785,7 @@ def normalize_google_language_code(code: str, allow_auto: bool) -> str:
 
 
 def normalize_libretranslate_language_code(code: str, allow_auto: bool) -> str:
+    """Adapta un codigo de idioma al formato que espera la API de LibreTranslate."""
     value = str(code or "").strip().lower()
     if allow_auto and (not value or value == "auto"):
         return "auto"

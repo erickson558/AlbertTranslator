@@ -1,3 +1,12 @@
+"""Panel de escritorio (Tkinter) para configurar y controlar el servidor local.
+
+Es el "lanzador" que ve un usuario no tecnico al abrir `AlbertTranslator.exe`:
+permite ajustar backends/modelo/puerto, guardar la configuracion en `.env`,
+arrancar/detener el servidor embebido (`ServerController`) y abrir la UI web
+en el navegador. Toda la logica de transcripcion/traduccion vive en otros
+modulos; este archivo solo orquesta la interfaz grafica.
+"""
+
 from __future__ import annotations
 
 from typing import Dict
@@ -42,10 +51,16 @@ except Exception:  # pragma: no cover - depends on system tkinter
 
 
 def desktop_gui_available() -> bool:
+    """Indica si Tkinter esta disponible en este entorno (puede faltar en algunos Python minimos)."""
     return tk is not None and ttk is not None and messagebox is not None
 
 
 def show_fatal_error_dialog(title: str, message: str) -> None:
+    """Muestra un dialogo modal de error fatal usando una ventana Tk minima y descartable.
+
+    Se usa desde `main.run_entrypoint()` cuando la app crashea antes/fuera de
+    tener ya una ventana principal abierta.
+    """
     if not desktop_gui_available():
         return
 
@@ -59,6 +74,7 @@ def show_fatal_error_dialog(title: str, message: str) -> None:
 
 
 def launch_desktop_gui() -> None:
+    """Construye y ejecuta la ventana principal del panel de escritorio (bloquea en `mainloop`)."""
     if not desktop_gui_available():
         raise RuntimeError("Tkinter no esta disponible en este entorno.")
 
@@ -72,6 +88,8 @@ def launch_desktop_gui() -> None:
     root.minsize(800, 560)
 
     def _on_tk_callback_exception(exc, value, tb) -> None:
+        # Tkinter no propaga excepciones de callbacks al hilo principal; sin este
+        # hook, un error en un boton se perderia silenciosamente en consola.
         LOGGER.exception("Excepcion no controlada en callback Tkinter", exc_info=(exc, value, tb))
         try:
             messagebox.showerror(
@@ -245,6 +263,7 @@ def launch_desktop_gui() -> None:
     )
 
     def set_button_state() -> None:
+        """Habilita/deshabilita botones segun `controller.running` (incluye hilo vivo, ver server.py)."""
         if controller.running:
             start_btn.state(["disabled"])
             stop_btn.state(["!disabled"])
@@ -255,6 +274,7 @@ def launch_desktop_gui() -> None:
             open_btn.state(["!disabled"])
 
     def collect_settings() -> Dict[str, str] | None:
+        """Lee y valida los campos del formulario; muestra un error y devuelve `None` si algo es invalido."""
         requested_device = whisper_device_var.get().strip().lower()
         settings = {
             "WHISPER_MODEL": whisper_model_var.get().strip() or DEFAULT_WHISPER_MODEL,
@@ -312,6 +332,7 @@ def launch_desktop_gui() -> None:
         return normalized
 
     def save_config(show_popup: bool = True) -> bool:
+        """Valida y persiste la configuracion actual en `.env` (boton "Guardar config")."""
         settings = collect_settings()
         if settings is None:
             LOGGER.warning("No se pudo guardar configuracion: datos invalidos.")
@@ -327,6 +348,7 @@ def launch_desktop_gui() -> None:
         return True
 
     def start_server() -> None:
+        """Arranca el servidor embebido; si el puerto elegido esta ocupado, busca uno libre automaticamente."""
         LOGGER.info("Boton Iniciar servidor presionado.")
         if controller.running:
             status_var.set(f"El servidor ya esta ejecutandose en {controller.url}")
@@ -364,6 +386,8 @@ def launch_desktop_gui() -> None:
         try:
             controller.start(settings)
         except OSError as exc:
+            # Puede ocurrir si el puerto se ocupo justo entre la comprobacion anterior y el bind real
+            # (condicion de carrera inherente a "check then act" en sockets); se reintenta una vez.
             LOGGER.exception("Error OSError al iniciar servidor: %s", exc)
             if is_address_in_use_error(exc):
                 current_port = int(settings["APP_PORT"])
@@ -418,6 +442,7 @@ def launch_desktop_gui() -> None:
             webbrowser.open(controller.url)
 
     def stop_server() -> None:
+        """Detiene el servidor embebido (boton "Detener servidor")."""
         LOGGER.info("Boton Detener servidor presionado.")
         if not controller.running:
             status_var.set("El servidor no esta en ejecucion.")
@@ -431,6 +456,7 @@ def launch_desktop_gui() -> None:
         set_button_state()
 
     def open_web() -> None:
+        """Abre la UI web en el navegador predeterminado (usa la URL activa o la configurada)."""
         LOGGER.info("Boton Abrir web presionado.")
         if controller.running:
             webbrowser.open(controller.url)
@@ -449,6 +475,7 @@ def launch_desktop_gui() -> None:
         webbrowser.open(target_url)
 
     def install_pair() -> None:
+        """Boton legado: la instalacion manual de pares Argos esta deshabilitada (se usa traduccion en linea)."""
         LOGGER.info("Boton Instalar par presionado (funcion deshabilitada en este build).")
         status_var.set(
             "La instalacion manual de pares esta deshabilitada en este build. "
@@ -460,6 +487,7 @@ def launch_desktop_gui() -> None:
         )
 
     def open_logs() -> None:
+        """Abre el archivo de log principal con la aplicacion asociada del sistema operativo."""
         log_path = get_main_log_path()
         LOGGER.info("Boton Abrir logs presionado. Archivo: %s", log_path)
         try:
@@ -469,6 +497,7 @@ def launch_desktop_gui() -> None:
             messagebox.showerror("Error al abrir logs", f"No se pudo abrir el log: {exc}")
 
     def close_app() -> None:
+        """Detiene el servidor (si esta activo) y cierra la ventana principal."""
         LOGGER.info("Cierre de aplicacion solicitado desde GUI.")
         if controller.running:
             controller.stop()
