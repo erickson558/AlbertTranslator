@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
+      should_release: ${{ steps.tag_check.outputs.should_release }}
 
     steps:
       # Descarga el historial completo para poder comparar tags correctamente.
@@ -42,19 +43,24 @@ jobs:
         shell: bash
         run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
 
-      # Falla si alguien hizo push a main sin incrementar VERSION.
+      # Si el tag ya existe, este push no incrementa VERSION (ej. dependencias)
+      # y se omite el release en vez de fallar el workflow.
       - name: Ensure tag does not already exist
+        id: tag_check
         shell: bash
         run: |
           TAG="${{ steps.version.outputs.value }}"
           if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "El tag '$TAG' ya existe. Incrementa VERSION antes de hacer push a main."
-            exit 1
+            echo "El tag '$TAG' ya existe. No se publica una nueva release para este push."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
           fi
 
   build-windows:
     name: Build Windows executable
     needs: validate-version
+    if: needs.validate-version.outputs.should_release == 'true'
     runs-on: windows-latest
 
     steps:
@@ -88,6 +94,7 @@ jobs:
     needs:
       - validate-version
       - build-windows
+    if: needs.validate-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
