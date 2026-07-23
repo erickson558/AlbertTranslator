@@ -75,7 +75,7 @@ jobs:
 
       # Publica los artefactos para que el job de release los adjunte.
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-assets
           path: |
