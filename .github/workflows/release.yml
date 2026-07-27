@@ -23,7 +23,7 @@ jobs:
     steps:
       # Descarga el historial completo para poder comparar tags correctamente.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -66,7 +66,7 @@ jobs:
     steps:
       # Descarga el codigo que se va a compilar.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Instala el runtime que usa el build.
       - name: Setup Python
@@ -100,7 +100,7 @@ jobs:
     steps:
       # Se requiere checkout con historial para crear y empujar el tag.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
