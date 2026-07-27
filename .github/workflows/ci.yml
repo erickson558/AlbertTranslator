@@ -18,7 +18,7 @@ jobs:
     steps:
       # Trae el codigo a la VM del runner.
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Usa una version moderna y estable de Python para validaciones.
       - name: Setup Python
